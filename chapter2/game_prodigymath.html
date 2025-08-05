@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เกม Prodigy Math</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background: linear-gradient(to bottom, #8EC5FC, #E0C3FC);
+    color: #333;
+    margin: 0;
+    padding: 20px;
+}
+
+/* ตกแต่งเกม */
+#game-container {
+    border: 2px solid #4CAF50;
+    border-radius: 15px;
+    padding: 25px;
+    max-width: 400px;
+    margin: auto;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#player-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 18px;
+    font-weight: bold;
+    color: #4CAF50;
+    margin-bottom: 20px;
+}
+
+#question-container {
+    text-align: center;
+}
+
+#feedback {
+    margin-top: 10px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+#hint {
+    font-size: 14px;
+    margin-top: 10px;
+    color: #555;
+}
+
+button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #45A049;
+}
+
+input[type="number"] {
+    width: 80%;
+    padding: 8px;
+    margin: 10px 0;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+
+/* การจัดตำแหน่งปุ่ม */
+#button-container {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+</style>
+<body>
+
+<!-- เกม Prodigy Math -->
+<div id="game-container">
+    <h1>Prodigy Math - เกมคณิตศาสตร์</h1>
+    <div id="player-info">
+        <span id="level-display">Level: 1</span>
+        <span id="score-display">Score: 0</span>
+        <span id="hp-display">HP: 100</span>
+    </div>
+    <div id="question-container">
+        <p id="question"></p>
+        <input type="number" id="answer" placeholder="กรอกตอบที่นี่">
+        <div id="button-container">
+            <button onclick="checkAnswer()">ส่งคำตอบ</button>
+            <button onclick="showHint()">แสดงคำใบ้</button>
+            <button onclick="skipQuestion()">ข้ามข้อ</button>
+        </div>
+        <div id="feedback"></div>
+        <div id="hint"></div>
+    </div>
+</div>
+
+<script>
+const questions = [
+    { question: "ถ้าอัตราส่วนของแอปเปิ้ลและส้มเป็น 3:5 และมีแอปเปิ้ลอยู่ 9 ผล จะมีส้มทั้งหมดกี่ผล?", answer: 15, hint: "ใช้การคูณเพื่อหาคำตอบ" },
+    { question: "นักเรียนห้องหนึ่งมีทั้งหมด 40 คน ถ้า 25% เป็นนักเรียนหญิง มีนักเรียนหญิงกี่คน?", answer: 10, hint: "คิดเปอร์เซ็นต์จากจำนวนทั้งหมด" },
+  { question: "อัตราส่วนของหนังสือการ์ตูนกับหนังสือเรียนนั้นเป็น 2:3 ถ้ามีหนังสือการ์ตูน 8 เล่ม จะมีหนังสือเรียนกี่เล่ม?", answer: 12, hint: "ใช้สัดส่วนหารหาอีกจำนวน" },
+    { question: "ในกระเป๋ามีลูกแก้วสีน้ำเงินและสีแดงในสัดส่วน 4:6 ถ้ามีลูกแก้วทั้งหมด 30 ลูก จะมีลูกแก้วสีน้ำเงินกี่ลูก?", answer: 12, hint: "แบ่งจำนวนลูกแก้วตามสัดส่วน" },
+    { question: "ร้านขายเสื้อให้ส่วนลด 20% หากเสื้อตัวหนึ่งราคาปกติ 500 บาท ราคาหลังหักส่วนลดจะเหลือเท่าไร?", answer: 400, hint: "คิดเปอร์เซ็นต์ลดจากราคาเดิม" },
+    { question: "นักเรียนในห้องหนึ่งมีทั้งหมด 50 คน มีนักเรียนชายคิดเป็น 60% จะมีนักเรียนชายกี่คน?", answer: 30, hint: "คิดเปอร์เซ็นต์จากจำนวนทั้งหมด" },
+    { question: "ในกล่องหนึ่งมีลูกปัดสีแดงและสีน้ำเงินในสัดส่วน 3:2 ถ้ามีลูกปัดสีแดง 15 ลูก จะมีลูกปัดสีน้ำเงินกี่ลูก?", answer: 10, hint: "แบ่งจำนวนตามสัดส่วนที่ให้มา" },
+    { question: "แปลงสัดส่วน 16:16 ให้เป็นจำนวนเต็ม", answer: 1, hint: "หารทั้งสองตัวเลขให้เป็นอัตราส่วนอย่างต่ำ" },
+    { question: "สินค้าราคา 800 บาท ลดราคา 30% ราคาหลังลดจะเหลือเท่าไร?", answer: 560, hint: "หาค่าเปอร์เซ็นต์ลดจากราคาหลัก" },
+    { question: "ถ้าส้มและมะนาวมีอัตราส่วนเป็น 5:7 และมีมะนาว 21 ผล จะมีส้มกี่ผล?", answer: 15, hint: "ใช้สัดส่วนกับจำนวนที่ให้มา" },
+    // ข้อเพิ่มเติม 10 ข้อ
+    { question: "น้ำหนักของแอปเปิ้ลและกล้วยอยู่ในอัตราส่วน 2:3 ถ้าแอปเปิ้ลมีน้ำหนัก 6 กิโลกรัม กล้วยจะมีน้ำหนักกี่กิโลกรัม?", answer: 9, hint: "คำนวณด้วยสัดส่วน 2:3" },
+    { question: "ถ้าในกลุ่มหนึ่งมีเด็กผู้หญิงและเด็กผู้ชายในสัดส่วน 3:4 ถ้ามีเด็กผู้ชาย 20 คน จะมีเด็กผู้หญิงกี่คน?", answer: 15, hint: "ใช้สัดส่วน 3:4 เพื่อหาคำตอบ" },
+    { question: "ราคาของสินค้าหนึ่งเพิ่มขึ้น 15% จากเดิมที่ราคา 200 บาท ราคาสุดท้ายเป็นเท่าไร?", answer: 230, hint: "คำนวณ 15% ของราคาเดิม" },
+    { question: "ร้านหนึ่งให้ส่วนลด 25% สำหรับสินค้าที่ราคา 1,000 บาท ราคาหลังส่วนลดจะเหลือเท่าไร?", answer: 750, hint: "คำนวณส่วนลดจากราคาหลัก" },
+    { question: "อัตราส่วนของนักเรียนห้อง ก และ ข คือ 7:5 ถ้านักเรียนห้อง ก มี 28 คน ห้อง ข จะมีกี่คน?", answer: 20, hint: "ใช้สัดส่วน 7:5 เพื่อหาคำตอบ" },
+    { question: "นักเรียนกลุ่มหนึ่งมีเด็กผู้หญิงคิดเป็น 40% ของกลุ่ม ถ้ามีเด็กผู้หญิง 8 คน ทั้งหมดมีกี่คน?", answer: 20, hint: "คำนวณจากเปอร์เซ็นต์ที่ให้มา" },
+    { question: "น้ำผลไม้ชนิดหนึ่งมีส่วนผสมของน้ำและน้ำผลไม้อยู่ในสัดส่วน 2:5 ถ้ามีปริมาณน้ำผลไม้ 15 ลิตร จะต้องเติมน้ำอีกกี่ลิตร?", answer: 6, hint: "ใช้สัดส่วน 2:5 เพื่อหาคำตอบ" },
+    { question: "นักเรียนห้องหนึ่งมีนักเรียนชายและหญิงในอัตราส่วน 3:4 ถ้ามีนักเรียนหญิง 16 คน นักเรียนชายจะมีกี่คน?", answer: 12, hint: "ใช้สัดส่วน 3:4 เพื่อหาคำตอบ" },
+    { question: "อัตราส่วนของน้ำตาลและเกลือคือ 5:1 ถ้ามีเกลือ 2 กิโลกรัม จะต้องใช้น้ำตาลกี่กิโลกรัม?", answer: 10, hint: "ใช้สัดส่วน 5:1 กับปริมาณเกลือ" },
+    { question: "สินค้าราคา 1,200 บาท ให้ส่วนลด 10% ราคาหลังลดจะเหลือเท่าไร?", answer: 1080, hint: "คำนวณ 10% จากราคาหลัก" }
+];
+let currentQuestion = 0;
+let score = 0;
+let level = 1;
+let hp = 100;
+let skipCount = 3;
+
+// ฟังก์ชันแสดงคำถาม
+function displayQuestion() {
+    const questionElement = document.getElementById("question");
+    const scoreDisplay = document.getElementById("score-display");
+    const levelDisplay = document.getElementById("level-display");
+    const hpDisplay = document.getElementById("hp-display");
+    const hintElement = document.getElementById("hint"); // ช่องคำใบ้
+
+    questionElement.innerText = questions[currentQuestion].question;
+    scoreDisplay.innerText = `Score: ${score}`;
+    levelDisplay.innerText = `Level: ${level}`;
+    hpDisplay.innerText = `HP: ${hp}`;
+    hintElement.innerText = ""; // ลบคำใบ้เมื่อเปลี่ยนโจทย์
+}
+
+// ฟังก์ชันตรวจคำตอบ
+function checkAnswer() {
+    const userAnswer = parseInt(document.getElementById("answer").value);
+    const feedbackElement = document.getElementById("feedback");
+
+    if (isNaN(userAnswer)) {
+        feedbackElement.innerText = "กรุณากรอกคำตอบให้ถูกต้อง";
+        feedbackElement.style.color = "orange";
+        return;
+    }
+
+    if (userAnswer === questions[currentQuestion].answer) {
+        feedbackElement.innerText = "ถูกต้อง!";
+        feedbackElement.style.color = "green";
+        score += 10;
+        currentQuestion++;
+
+        if (currentQuestion % 5 === 0) level++;
+
+        if (currentQuestion < questions.length) {
+            document.getElementById("answer").value = ""; // ลบคำตอบก่อนหน้า
+            displayQuestion();
+        } else {
+            showRestartOptions(); // แสดงปุ่มเริ่มใหม่เมื่อจบคำถามทั้งหมด
+        }
+    } else {
+        hp -= 10;
+        document.getElementById("hp-display").innerText = `HP: ${hp}`;
+        feedbackElement.innerText = "ผิด! ลด HP 10 คะแนน!";
+        feedbackElement.style.color = "red";
+
+        if (hp <= 0) {
+            feedbackElement.innerText = "คุณแพ้! กรุณาเริ่มใหม่!";
+            setTimeout(resetGame, 2000);
+        } else {
+            document.getElementById("answer").value = ""; // ลบคำตอบก่อนหน้า
+            displayQuestion();
+        }
+    }
+}
+
+// ฟังก์ชันแสดงคำใบ้
+function showHint() {
+    const hintElement = document.getElementById("hint");
+    hintElement.innerText = questions[currentQuestion].hint || "ไม่มีคำใบ้เพิ่มเติม";
+}
+
+// ฟังก์ชันรีเซ็ตเกม
+function resetGame() {
+    currentQuestion = 0;
+    score = 0;
+    level = 1;
+    hp = 100;
+    skipCount = 3;
+    document.getElementById("answer").value = ""; // ลบคำตอบก่อนหน้า
+    updateSkipNotification();
+    displayQuestion();
+}
+
+// แสดงปุ่มเริ่มใหม่เมื่อจบเกม
+function showRestartOptions() {
+    const feedbackElement = document.getElementById("feedback");
+    feedbackElement.innerHTML = `ยินดีด้วย! คุณคือผู้พิชิต Prodigy Math! คะแนนรวม: ${score} คะแนน <br> ต้องการเริ่มเกมใหม่หรือไม่?`;
+    
+    // เพิ่มปุ่ม "เริ่มใหม่" และ "ยกเลิก"
+    const restartBtn = document.createElement("button");
+    restartBtn.innerText = "เริ่มใหม่";
+    restartBtn.onclick = resetGame;
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.innerText = "ยกเลิก";
+    cancelBtn.onclick = () => feedbackElement.innerHTML = ""; // ซ่อนข้อความหากกด "ยกเลิก"
+
+    feedbackElement.appendChild(restartBtn);
+    feedbackElement.appendChild(cancelBtn);
+}
+
+// ฟังก์ชันอัปเดตการแจ้งเตือนจำนวนครั้งที่ข้ามได้
+function updateSkipNotification() {
+    const skipNotification = document.getElementById("skip-notification");
+    skipNotification.innerText = `เหลือการข้ามได้อีก ${skipCount} ครั้ง`;
+}
+
+// ฟังก์ชันข้ามคำถาม
+function skipQuestion() {
+    if (skipCount > 0) {
+        skipCount--;
+        currentQuestion++;
+        if (currentQuestion < questions.length) {
+            document.getElementById("answer").value = ""; // ลบคำตอบก่อนหน้า
+            displayQuestion();
+            updateSkipNotification();
+        } else {
+            showRestartOptions();
+        }
+    } else {
+        alert("คุณไม่สามารถข้ามคำถามได้อีกแล้ว!");
+    }
+}
+
+// เริ่มต้นเกม
+displayQuestion();
+updateSkipNotification();
+// ฟังก์ชันแสดงคำถาม
+function displayQuestion() {
+    const questionElement = document.getElementById("question");
+    const scoreDisplay = document.getElementById("score-display");
+    const levelDisplay = document.getElementById("level-display");
+    const hpDisplay = document.getElementById("hp-display");
+    const hintElement = document.getElementById("hint");
+    const feedbackElement = document.getElementById("feedback");
+
+    // แสดงคำถามใหม่
+    questionElement.innerText = questions[currentQuestion].question;
+    scoreDisplay.innerText = `Score: ${score}`;
+    levelDisplay.innerText = `Level: ${level}`;
+    hpDisplay.innerText = `HP: ${hp}`;
+
+    // รีเซ็ตข้อมูลคำใบ้และคำตอบทุกครั้งเมื่อเปลี่ยนโจทย์ใหม่
+    hintElement.innerText = ""; // ลบคำใบ้ก่อนหน้า
+    document.getElementById("answer").value = ""; // ลบคำตอบก่อนหน้า
+    feedbackElement.innerText = ""; // ลบข้อความฟีดแบ็กก่อนหน้า
+}
+// ฟังก์ชันแสดงปุ่มถามว่าต้องการเริ่มเกมใหม่หรือไม่
+function askRestart() {
+    const feedbackElement = document.getElementById("feedback");
+    feedbackElement.innerHTML = "ต้องการเริ่มเกมใหม่หรือไม่? <button onclick='resetQuestions()'>ใช่</button> <button onclick='endGame()'>ไม่ใช่</button>";
+}
+
+// ฟังก์ชันจบเกมเมื่อผู้ใช้ไม่ต้องการเล่นต่อ
+function endGame() {
+    const feedbackElement = document.getElementById("feedback");
+    feedbackElement.innerText = "End Game!";
+}
+
+// แก้ไขในฟังก์ชัน checkAnswer ให้เรียกใช้ askRestart เมื่อจบเกม
+function checkAnswer() {
+    const userAnswer = parseInt(document.getElementById("answer").value);
+    const feedbackElement = document.getElementById("feedback");
+
+    if (isNaN(userAnswer)) {
+        feedbackElement.innerText = "กรุณากรอกคำตอบ";
+        feedbackElement.style.color = "orange";
+        return;
+    }
+
+    if (userAnswer === questions[currentQuestion].answer) {
+        feedbackElement.innerText = "ถูกต้อง!";
+        feedbackElement.style.color = "green";
+        score += 10;
+        currentQuestion++;
+
+        if (currentQuestion % 5 === 0) {
+            level++;
+        }
+
+        if (currentQuestion < questions.length) {
+            displayQuestion();
+        } else {
+            feedbackElement.innerText = `ยินดีด้วย! คุณคือผู้พิชิต Prodigy Math! คะแนนรวม: ${score} คะแนน`;
+            setTimeout(askRestart, 2000); // ถามผู้ใช้ว่าจะเริ่มเกมใหม่หรือไม่
+        }
+    } else {
+        hp -= 10;
+        document.getElementById("hp-display").innerText = `HP: ${hp}`;
+        feedbackElement.innerText = "ผิด! ลด HP 10 คะแนน!";
+        feedbackElement.style.color = "red";
+
+        if (hp <= 0) {
+            feedbackElement.innerText = "คุณแพ้! เริ่มเกมใหม่!";
+            setTimeout(askRestart, 2000); // ถามผู้ใช้ว่าจะเริ่มเกมใหม่หรือไม่
+        } else {
+            displayQuestion();
+        }
+    }
+}
+// ฟังก์ชันรีเซ็ตค่าเกมทั้งหมดเพื่อเริ่มเกมใหม่
+function resetQuestions() {
+    // รีเซ็ตค่าเริ่มต้นทั้งหมด
+    score = 0;
+    currentQuestion = 0;
+    level = 1;
+    hp = 100; // หรือค่าเริ่มต้นของ HP ที่คุณต้องการ
+
+    // แสดงคำถามแรกอีกครั้ง
+    displayQuestion();
+
+    // เคลียร์ข้อความในฟีดแบ็ก
+    const feedbackElement = document.getElementById("feedback");
+    feedbackElement.innerText = "";
+
+    // อัปเดตการแสดงคะแนน, ระดับ และ HP
+    document.getElementById("score-display").innerText = `Score: ${score}`;
+    document.getElementById("level-display").innerText = `Level: ${level}`;
+    document.getElementById("hp-display").innerText = `HP: ${hp}`;
+}
+// ฟังก์ชันแสดงคำถาม
+function displayQuestion() {
+    const questionElement = document.getElementById("question");
+    const scoreDisplay = document.getElementById("score-display");
+    const levelDisplay = document.getElementById("level-display");
+    const hpDisplay = document.getElementById("hp-display");
+    const hintElement = document.getElementById("hint");
+    const feedbackElement = document.getElementById("feedback");
+
+    // แสดงคำถามใหม่
+    questionElement.innerText = questions[currentQuestion].question;
+    scoreDisplay.innerText = `Score: ${score}`;
+    levelDisplay.innerText = `Level: ${level}`;
+    hpDisplay.innerText = `HP: ${hp}`;
+
+    // รีเซ็ตข้อมูลคำใบ้และคำตอบทุกครั้งเมื่อเปลี่ยนโจทย์ใหม่
+    hintElement.innerText = ""; // ลบคำใบ้ก่อนหน้า
+    document.getElementById("answer").value = ""; // ลบคำตอบก่อนหน้า
+    feedbackElement.innerText = ""; // ลบข้อความฟีดแบ็กก่อนหน้า
+}
+
+// ฟังก์ชันตรวจคำตอบ
+function checkAnswer() {
+    const userAnswer = parseInt(document.getElementById("answer").value);
+    const feedbackElement = document.getElementById("feedback");
+
+    if (isNaN(userAnswer)) {
+        feedbackElement.innerText = "กรุณากรอกคำตอบ";
+        feedbackElement.style.color = "orange";
+        return;
+    }
+
+    if (userAnswer === questions[currentQuestion].answer) {
+        feedbackElement.innerText = "ถูกต้อง!";
+        feedbackElement.style.color = "green";
+        score += 10;
+        currentQuestion++;
+
+        if (currentQuestion % 5 === 0) level++;
+
+        if (currentQuestion < questions.length) {
+            setTimeout(() => { // หน่วงเวลาเล็กน้อยเพื่อให้ผู้เล่นเห็นข้อความ
+                document.getElementById("answer").value = ""; // ลบคำตอบก่อนหน้า
+                displayQuestion();
+            }, 1000);
+        } else {
+            showRestartOptions(); // แสดงปุ่มเริ่มใหม่เมื่อจบคำถามทั้งหมด
+        }
+    } else {
+        hp -= 10;
+        document.getElementById("hp-display").innerText = `HP: ${hp}`;
+        feedbackElement.innerText = "ผิด! ลด HP 10 คะแนน!";
+        feedbackElement.style.color = "red";
+
+        if (hp <= 0) {
+            feedbackElement.innerText = "คุณแพ้!";
+            setTimeout(resetGame, 2000);
+        } else {
+            setTimeout(() => {
+                document.getElementById("answer").value = ""; // ลบคำตอบก่อนหน้า
+                displayQuestion();
+            }, 1000);
+        }
+    }
+}
+// ฟังก์ชันถามว่าผู้เล่นต้องการเริ่มเกมใหม่หรือไม่
+function askRestart() {
+    const feedbackElement = document.getElementById("feedback");
+    feedbackElement.innerHTML = "ต้องการเริ่มเกมใหม่หรือไม่? <button onclick='resetGame()'>ใช่</button> <button onclick='endGame()'>ไม่ใช่</button>";
+}
+
+// ฟังก์ชันรีเซ็ตเกมเริ่มใหม่
+function resetGame() {
+    currentQuestion = 0;
+    score = 0;
+    level = 1;
+    hp = 100;
+    skipCount = 3;
+    displayQuestion();  // เริ่มคำถามใหม่
+}
+
+// ฟังก์ชันจบเกมเมื่อผู้เล่นไม่ต้องการเล่นต่อ
+function endGame() {
+    const feedbackElement = document.getElementById("feedback");
+    feedbackElement.innerText = "End Game!";
+}
+// ฟังก์ชันตรวจคำตอบ
+function checkAnswer() {
+    const userAnswer = parseInt(document.getElementById("answer").value);
+    const feedbackElement = document.getElementById("feedback");
+
+    if (isNaN(userAnswer)) {
+        feedbackElement.innerText = "กรุณากรอกคำตอบ";
+        feedbackElement.style.color = "orange";
+        return;
+    }
+
+    if (userAnswer === questions[currentQuestion].answer) {
+        feedbackElement.innerText = "ถูกต้อง!";
+        feedbackElement.style.color = "green";
+        score += 10;
+        currentQuestion++;
+
+        if (currentQuestion % 5 === 0) level++;
+
+        if (currentQuestion < questions.length) {
+            displayQuestion();
+        } else {
+            feedbackElement.innerText = `ยินดีด้วย! คุณคือผู้พิชิต Prodigy Math: ${score} คะแนน`;
+            setTimeout(askRestart, 2000); // ถามผู้ใช้ว่าจะเริ่มเกมใหม่หรือไม่
+        }
+    } else {
+        hp -= 10;
+        document.getElementById("hp-display").innerText = `HP: ${hp}`;
+        feedbackElement.innerText = "ผิด! ลด HP 10 คะแนน!";
+        feedbackElement.style.color = "red";
+
+        if (hp <= 0) {
+            feedbackElement.innerText = "คุณแพ้! เริ่มเกมใหม่!";
+            setTimeout(askRestart, 2000); // ถามผู้ใช้ว่าจะเริ่มเกมใหม่หรือไม่
+        } else {
+            displayQuestion();
+        }
+    }
+}
+function checkAnswer() {
+    const userAnswer = parseInt(document.getElementById("answer").value);
+    const feedbackElement = document.getElementById("feedback");
+
+    if (isNaN(userAnswer)) {
+        feedbackElement.innerText = "กรุณากรอกคำตอบ";
+        feedbackElement.style.color = "orange";
+        return;
+    }
+
+    if (userAnswer === questions[currentQuestion].answer) {
+        feedbackElement.innerText = "ถูกต้อง!";
+        feedbackElement.style.color = "green";
+        score += 10;
+        currentQuestion++;
+
+        if (currentQuestion % 5 === 0) level++;
+        if (currentQuestion < questions.length) {
+            setTimeout(displayQuestion, 1000); // แสดงคำตอบที่ถูกก่อนเปลี่ยนคำถาม
+        } else {
+            feedbackElement.innerText = `ยินดีด้วย! คุณคือผู้พิชิต Prodigy Math! คะแนนรวม: ${score} คะแนน`;
+            setTimeout(askRestart, 2000); // ถามว่าต้องการเริ่มใหม่หรือไม่
+        }
+    } else {
+        hp -= 10;
+        document.getElementById("hp-display").innerText = `HP: ${hp}`;
+        feedbackElement.innerText = "ผิด! ลด HP 10 คะแนน!";
+        feedbackElement.style.color = "red";
+
+        if (hp <= 0) {
+            feedbackElement.innerText = "คุณแพ้! เริ่มเกมใหม่!";
+            setTimeout(askRestart, 2000); // ถามว่าต้องการเริ่มใหม่หรือไม่
+        }
+    }
+
+    // Clear the answer input field after each answer check
+    document.getElementById("answer").value = "";
+}
+
+
+
+</script>
+</body>
+</html>
+<div id="feedback"></div>
+
+
+
