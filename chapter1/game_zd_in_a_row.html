@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>in a row Game</title>
+</head>
+<style>
+/* Base styles */
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 20px;
+    transition: all 0.3s ease-in-out;
+}
+
+.container {
+    display: flex;
+    justify-content: space-around; /* ปรับให้แยกจากกันเล็กน้อย */
+    align-items: flex-start;
+    margin-top: 2rem;
+    gap: 2rem;
+    max-width: 1200px;
+    width: 100%;
+}
+
+/* Instructions styles */
+.instructions-container {
+    flex: 0 0 300px;
+}
+
+.instructions {
+    background-color: #f8f8f8;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    transition: background-color 0.3s ease;
+}
+
+.instructions:hover {
+    background-color: #f2f2f2;
+}
+
+.instructions h2 {
+    font-size: 1.8rem;
+    color: #333;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-weight: 600;
+}
+
+.instructions ol {
+    margin: 0;
+    padding-left: 1.8rem;
+    color: #333333;
+    font-size: 1.1rem;
+    list-style-type: none;
+}
+
+.instructions li {
+    margin: 0.8rem 0;
+    line-height: 1.5;
+    counter-increment: item;
+}
+
+.instructions li:before {
+    content: counter(item) ". ";
+    color: #8B4513;
+    font-weight: bold;
+    margin-right: 0.5rem;
+}
+
+/* Game container and scores */
+.game-container {
+    flex: 1;
+    max-width: 800px;
+    text-align: center;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Timer and Player Stats */
+.timer {
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+.scores {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin: 1.5rem 0;
+    width: 100%;
+}
+
+/* Player stats and HP bars */
+.player-stats {
+    flex: 1;
+    max-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.player-score {
+    padding: 1rem;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+#leftScore {
+    background-color: #8B4513;
+    color: white;
+}
+
+#rightScore {
+    background-color: #FFD700;
+    color: #333;
+}
+
+.player-score:hover {
+    transform: translateY(-2px);
+}
+
+/* HP Bar styles */
+.hp-container {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    padding: 0.8rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.hp-bar {
+    height: 25px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.hp-fill {
+    height: 100%;
+    transition: width 0.5s ease-out;
+    position: relative;
+}
+
+.left-hp .hp-fill {
+    background: linear-gradient(90deg, 
+        #8B4513 0%, 
+        #A0522D 50%,
+        #D2691E 100%
+    );
+    box-shadow: 0 0 10px rgba(139, 69, 19, 0.4);
+}
+
+.right-hp .hp-fill {
+    background: linear-gradient(90deg, 
+        #DAA520 0%, 
+        #FDB931 50%, 
+        #FFD700 100%
+    );
+    box-shadow: 0 0 10px rgba(218, 165, 32, 0.4);
+}
+
+.hp-text {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    color: white;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    line-height: 25px;
+    font-size: 0.9rem;
+    z-index: 1;
+}
+
+/* Connect 4 Board */
+.board {
+    display: grid;
+    grid-template-columns: repeat(7, 60px);
+    gap: 5px;
+    padding: 10px;
+    background-color: #1976D2;
+    border-radius: 10px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    animation: slideIn 0.5s ease-out;
+    margin: 20px auto;
+}
+
+.cell {
+    width: 60px;
+    height: 60px;
+    background-color: white;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.cell.player1 {
+    background-color: #8B4513;
+    animation: dropToken 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.cell.player2 {
+    background-color: #FFD700;
+    animation: dropToken 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Equation Section */
+.equation-section {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin: 2rem 0;
+    transition: all 0.3s ease;
+}
+
+#equation {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 1.5rem;
+}
+
+.answer-input {
+    width: 100%;
+    max-width: 200px;
+    padding: 0.8rem;
+    font-size: 1.1rem;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    text-align: center;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.answer-input:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+    outline: none;
+}
+
+.submit-btn {
+    padding: 0.8rem 2rem;
+    font-size: 1.1rem;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.submit-btn:hover {
+    background-color: #45a049;
+    transform: translateY(-2px);
+}
+
+/* Animations */
+@keyframes dropToken {
+    0% {
+        transform: translateY(-300px);
+        opacity: 0;
+    }
+    70% {
+        transform: translateY(10px);
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes hpDamage {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+    100% { transform: translateX(0); }
+}
+
+@keyframes hpHeal {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .container {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .instructions-container {
+        width: 100%;
+        max-width: 600px;
+        margin-bottom: 2rem;
+    }
+    
+    .board {
+        grid-template-columns: repeat(7, 50px);
+    }
+    
+    .cell {
+        width: 50px;
+        height: 50px;
+    }
+}
+
+</style>
+
+<body>
+<div class="container">
+  <div class="instructions-container">
+    <div class="instructions">
+      <h2>วิธีการเล่นเกม</h2>
+      <h2>4 in a row</h2>
+      <ol>
+        <li><strong>แก้สมการให้ถูกต้อง</strong>: เริ่มเกมโดยการแก้สมการทางคณิตศาสตร์ เมื่อแก้สมการถูกต้อง ผู้เล่นจะได้วางหมากในช่องที่ต้องการ โดยหมากจะตกลงไปที่ช่องว่างที่ต่ำที่สุด</li>
+        <li><strong>แก้สมการผิด</strong>: หากแก้สมการผิดจะลด HP 20หน่วย และโอกาสการแก้สมการจะตกไปยังอีกฝ่าย</li>
+        <li><strong>เงื่อนไขการชนะ</strong>: ผู้เล่นจะต้องพยายามวางหมากของตนให้เรียงติดกัน 4 ตัว ในแนวนอน แนวตั้ง หรือแนวทแยง</li>
+        <li><strong>ผู้ชนะ</strong>: ผู้เล่นคนแรกที่สามารถเรียงหมาก 4 ตัวติดกันได้ จะเป็นผู้ชนะ</li>
+      </ol>
+    </div>
+  </div>
+  
+  <div class="game-container">
+    <div class="scores">
+      <div class="player-stats">
+        <div id="leftScore" class="player-score">ผู้เล่น 1: 0</div>
+        <div class="hp-container left-hp">
+          <div class="hp-bar">
+            <div class="hp-text">100/100</div>
+            <div class="hp-fill" style="width: 100%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="player-stats">
+        <div id="rightScore" class="player-score">ผู้เล่น 2: 0</div>
+        <div class="hp-container right-hp">
+          <div class="hp-bar">
+            <div class="hp-text">100/100</div>
+            <div class="hp-fill" style="width: 100%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="equation-section">
+      <div id="equation"></div>
+      <input type="number" class="answer-input" id="answer" placeholder="คำตอบ">
+      <button class="submit-btn" onclick="checkAnswer()">ตอบ</button>
+      <div id="hint" class="hint"></div>
+    </div>
+    
+    <div class="board" id="board"></div>
+  </div>
+</div>
+
+
+<script>
+let currentPlayer = 'left';
+let scores = { left: 0, right: 0 };
+let canPlay = false;
+let currentEquation = null;
+let gameBoard = Array(6).fill().map(() => Array(7).fill(null));
+let isAnimating = false;
+let timeRemaining;
+let timeLimit;
+let timerInterval;
+// เพิ่มตัวแปร HP สำหรับผู้เล่นทั้งสอง
+let playerHP = {
+    left: 100,
+    right: 100
+};
+
+function updateHPBar(player, hp) {
+    const hpBar = document.querySelector(`.${player}-hp .hp-fill`);
+    const hpText = document.querySelector(`.${player}-hp .hp-text`);
+    
+    // ทำให้ HP อยู่ในช่วง 0-100
+    hp = Math.max(0, Math.min(100, hp));
+    
+    // อัพเดทความกว้างของ HP bar และข้อความ
+    hpBar.style.width = `${hp}%`;
+    hpText.textContent = `${Math.round(hp)}/100`;
+    
+    // เพิ่ม animation เมื่อ HP ลดลง
+    if (hp < playerHP[player]) {
+        hpBar.style.animation = 'hpDamage 0.5s';
+        setTimeout(() => {
+            hpBar.style.animation = '';
+        }, 500);
+    }
+    
+    // เพิ่ม animation เมื่อ HP เพิ่มขึ้น
+    if (hp > playerHP[player]) {
+        hpBar.style.animation = 'hpHeal 0.5s';
+        setTimeout(() => {
+            hpBar.style.animation = '';
+        }, 500);
+    }
+    
+    playerHP[player] = hp;
+}
+
+function startTimer() {
+  clearInterval(timerInterval); // เคลียร์ timer เดิมก่อน
+  timeRemaining = timeLimit;
+  updateTimerDisplay();
+  
+  timerInterval = setInterval(() => {
+    timeRemaining--;
+    updateTimerDisplay();
+    if (timeRemaining <= 0) {
+      clearInterval(timerInterval);
+      switchPlayer();
+    }
+  }, 1000);
+}
+
+const styles = `
+
+.board {
+    display: grid;
+    grid-template-columns: repeat(7, 60px);
+    gap: 5px;
+    padding: 10px;
+    background-color: #1976D2;
+    border-radius: 10px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    animation: slideIn 0.5s ease-out;
+    margin: 20px auto;
+    width: fit-content;
+}
+
+.scores {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 460px; /* พอดีกับขนาดของ board */
+    margin: 1rem auto;
+}
+
+.player-stats {
+    flex: 0 0 45%;
+}
+
+/* ปรับแต่ง timer ให้สวยงามขึ้น */
+#timer {
+    background-color: #1976D2;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin: 10px auto;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    width: fit-content;
+    min-width: 200px;
+}
+
+#timer.warning {
+    background-color: #ff4d4d;
+    animation: pulse 1s infinite;
+}
+
+.equation-section {
+    width: 100%;
+    max-width: 460px; /* พอดีกับขนาดของ board */
+    margin: 1rem auto;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Responsive Design */
+@media (max-width: 1000px) {
+    .container {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .instructions-container {
+        width: 100%;
+        max-width: 460px;
+        margin-bottom: 2rem;
+    }
+}
+
+@media (max-width: 500px) {
+    .board {
+        grid-template-columns: repeat(7, 40px);
+        gap: 3px;
+        padding: 8px;
+    }
+    
+    .cell {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .scores {
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .player-stats {
+        width: 100%;
+    }
+    
+    #timer {
+        font-size: 1rem;
+        min-width: 150px;
+    }
+}`;
+
+// เพิ่ม style ใหม่เข้าไปใน document
+const styleSheet = document.createElement("style");
+styleSheet.textContent = styles;
+document.head.appendChild(styleSheet);
+
+function updateTimerDisplay() {
+    const timerElement = document.getElementById('timer');
+    if (!timerElement) return;
+
+    const minutes = Math.floor(timeRemaining / 60);
+    const seconds = timeRemaining % 60;
+    timerElement.textContent = `เวลาคงเหลือ: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    
+    if (timeRemaining <= 10) {
+        timerElement.classList.add('warning');
+    } else {
+        timerElement.classList.remove('warning');
+    }
+}
+
+function resetTimer() {
+    clearInterval(timerInterval);
+    timeRemaining = timeLimit;
+    updateTimerDisplay();
+    startTimer();
+}
+
+function switchPlayer() {
+  currentPlayer = currentPlayer === 'left' ? 'right' : 'left';
+  document.body.style.backgroundColor = currentPlayer === 'left' ? '#8B4513' : '#FFD700';
+  canPlay = false;
+  currentEquation = generateEquation();
+  document.getElementById('equation').textContent = `โจทย์: ${currentEquation.equation}`;
+  resetTimer();
+}
+
+// ฟังก์ชันสร้างกระดาน
+function createBoard() {
+    const board = document.getElementById('board');
+    board.innerHTML = '';
+    
+    for (let row = 0; row < 6; row++) {
+        for (let col = 0; col < 7; col++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.dataset.row = row;
+            cell.dataset.col = col;
+            cell.addEventListener('click', () => makeMove(col));
+            cell.addEventListener('mouseover', () => showPreview(col));
+            cell.addEventListener('mouseout', removePreview);
+            board.appendChild(cell);
+        }
+    }
+}
+
+function showPreview(col) {
+    if (!canPlay || isAnimating) return;
+    
+    removePreview();
+    let row = getLowestEmptyRow(col);
+    if (row !== -1) {
+        const cells = document.querySelectorAll('.cell');
+        const index = row * 7 + col;
+        cells[index].classList.add(currentPlayer === 'left' ? 'preview-player1' : 'preview-player2');
+    }
+}
+
+function removePreview() {
+    const cells = document.querySelectorAll('.cell');
+    cells.forEach(cell => {
+        cell.classList.remove('preview-player1', 'preview-player2');
+    });
+}
+
+function getLowestEmptyRow(col) {
+    for (let row = 5; row >= 0; row--) {
+        if (!gameBoard[row][col]) {
+            return row;
+        }
+    }
+    return -1;
+}
+
+// ฟังก์ชันทำการเดิน
+async function makeMove(col) {
+    if (!canPlay || isAnimating) return;
+    
+    const row = getLowestEmptyRow(col);
+    if (row === -1) return;
+    
+    isAnimating = true;
+    gameBoard[row][col] = currentPlayer;
+    
+    // สร้างอนิเมชันการตก
+    const cells = document.querySelectorAll('.cell');
+    for (let currentRow = 0; currentRow <= row; currentRow++) {
+        const index = currentRow * 7 + col;
+        cells[index].classList.add(currentPlayer === 'left' ? 'player1' : 'player2');
+        
+        if (currentRow > 0) {
+            const previousIndex = (currentRow - 1) * 7 + col;
+            cells[previousIndex].classList.remove('player1', 'player2');
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    
+    isAnimating = false;
+    
+    if (checkWin(row, col)) {
+        scores[currentPlayer]++;
+        document.getElementById(`${currentPlayer}Score`).textContent = 
+            `ผู้เล่น ${currentPlayer === 'left' ? '1' : '2'}: ${scores[currentPlayer]}`;
+        await new Promise(resolve => setTimeout(resolve, 500));
+        alert(`ผู้เล่น ${currentPlayer === 'left' ? '1' : '2'} ชนะ!`);
+        resetGame();
+        return;
+    }
+    
+    if (checkDraw()) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        alert("เสมอ!");
+        resetGame();
+        return;
+    }
+    
+    switchPlayer();
+}
+
+// ฟังก์ชันอัพเดทกระดาน
+function updateBoard() {
+    const cells = document.querySelectorAll('.cell');
+    for (let row = 0; row < 6; row++) {
+        for (let col = 0; col < 7; col++) {
+            const index = row * 7 + col;
+            cells[index].className = 'cell';
+            if (gameBoard[row][col] === 'left') {
+                cells[index].classList.add('player1');
+            } else if (gameBoard[row][col] === 'right') {
+                cells[index].classList.add('player2');
+            }
+        }
+    }
+}
+
+// ฟังก์ชันตรวจสอบการชนะ
+function checkWin(row, col) {
+    const directions = [
+        [[0, 1], [0, -1]], // แนวนอน
+        [[1, 0], [-1, 0]], // แนวตั้ง
+        [[1, 1], [-1, -1]], // แนวทแยงหลัก
+        [[1, -1], [-1, 1]] // แนวทแยงรอง
+    ];
+
+    for (const [dir1, dir2] of directions) {
+        let count = 1;
+        count += countDirection(row, col, dir1[0], dir1[1]);
+        count += countDirection(row, col, dir2[0], dir2[1]);
+        if (count >= 4) return true;
+    }
+    return false;
+}
+
+// ฟังก์ชันนับจำนวนเหรียญในทิศทางที่กำหนด
+function countDirection(row, col, dRow, dCol) {
+    const player = gameBoard[row][col];
+    let count = 0;
+    let currentRow = row + dRow;
+    let currentCol = col + dCol;
+
+    while (
+        currentRow >= 0 && currentRow < 6 &&
+        currentCol >= 0 && currentCol < 7 &&
+        gameBoard[currentRow][currentCol] === player
+    ) {
+        count++;
+        currentRow += dRow;
+        currentCol += dCol;
+    }
+
+    return count;
+}
+
+// ฟังก์ชันตรวจสอบการเสมอ
+function checkDraw() {
+    return gameBoard[0].every(cell => cell !== null);
+}
+
+// ฟังก์ชันสลับผู้เล่น
+function switchPlayer() {
+  currentPlayer = currentPlayer === 'left' ? 'right' : 'left';
+  document.body.style.backgroundColor = currentPlayer === 'left' ? '#8B4513' : '#FFD700';
+  canPlay = false;
+  currentEquation = generateEquation();
+  document.getElementById('equation').textContent = `โจทย์: ${currentEquation.equation}`;
+  resetTimer();
+}
+
+// ฟังก์ชันรีเซ็ตเกม
+function resetGame() {
+    gameBoard = Array(6).fill().map(() => Array(7).fill(null));
+    createBoard();
+    currentPlayer = 'left';
+    document.body.style.backgroundColor = '#8B4513';
+    currentEquation = generateEquation();
+    document.getElementById('equation').textContent = `โจทย์: ${currentEquation.equation}`;
+    canPlay = false;
+    
+    // รีเซ็ต HP ทั้งสองฝ่าย
+    playerHP = { left: 100, right: 100 };
+    updateHPBar('left', 100);
+    updateHPBar('right', 100);
+    
+    resetTimer();
+}
+
+// เพิ่ม initialization เมื่อโหลดหน้าเว็บ
+document.addEventListener('DOMContentLoaded', () => {
+    document.body.style.backgroundColor = '#8B4513';
+    createBoard();
+    currentEquation = generateEquation();
+    document.getElementById('equation').textContent = `โจทย์: ${currentEquation.equation}`;
+    const timerElement = document.createElement('div');
+    timerElement.id = 'timer';
+    timerElement.classList.add('timer');
+    document.getElementById('board').parentNode.insertBefore(timerElement, document.getElementById('board'));
+    timeLimit = parseInt(prompt('ตั้งค่าการจับเวลาเพื่อแก้สมการ(หน่วย : วินาที)'));
+    if (isNaN(timeLimit) || timeLimit <= 0) {
+      timeLimit = 60; // Default to 60 seconds
+    }
+
+    startTimer();
+});
+
+// ฟังก์ชันสุ่มตัวเลข
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+// ฟังก์ชันสุ่มสมการ
+function generateEquation() {
+    const equationType = getRandomInt(1, 5);
+    let x;
+    do {
+        x = getRandomInt(-10, 10);
+    } while (x === 0); // ไม่รวม 0 เป็นคำตอบ
+    
+    let equation, answer;
+
+    switch (equationType) {
+        case 1:
+            const a1 = getRandomInt(1, 5);
+            const b1 = getRandomInt(-10, 10);
+            equation = `${a1}x + ${b1} = ${a1 * x + b1}`;
+            answer = x;
+            break;
+        case 2:
+            const a2 = getRandomInt(2, 6);
+            const b2 = getRandomInt(1, a2 - 1);
+            const c2 = (a2 - b2) * x;
+            equation = `${a2}x = ${b2}x + ${c2}`;
+            answer = x;
+            break;
+        case 3:
+            const c3 = getRandomInt(2, 4);
+            const a3 = getRandomInt(1, 5) * c3;
+            const b3 = getRandomInt(-10, 10);
+            const d3 = Math.floor((a3 * x + b3) / c3);
+            equation = `(${a3}x + ${b3})/${c3} = ${d3}`;
+            answer = x;
+            break;
+        case 4:
+            const a4 = getRandomInt(2, 6);
+            const c4 = getRandomInt(1, a4 - 1);
+            const b4 = getRandomInt(-10, 10);
+            const d4 = b4 - (a4 - c4) * x;
+            equation = `${a4}x + ${b4} = ${c4}x + ${d4}`;
+            answer = x;
+            break;
+        case 5:
+            const a5 = getRandomInt(1, 5);
+            const b5 = getRandomInt(-5, 5);
+            const c5 = a5 * (x + b5);
+            equation = `${a5}(x + ${b5}) = ${c5}`;
+            answer = x;
+            break;
+    }
+
+    equation = equation
+        .replace(/\+ -/g, '- ')
+        .replace(/ 1x/g, ' x')
+        .replace(/^1x/, 'x')
+        .replace(/ \+ 0/g, '')
+        .replace(/ - 0/g, '');
+
+    return { equation, answer: Math.floor(answer) };
+}
+
+// ฟังก์ชันตรวจสอบคำตอบ
+function checkAnswer() {
+    if (!currentEquation) {
+        currentEquation = generateEquation();
+        return;
+    }
+
+    const userInputValue = document.getElementById('answer').value.trim();
+    const userAnswer = Number(userInputValue);
+    const correctAnswer = Number(currentEquation.answer);
+    const hintElement = document.getElementById('hint');
+
+    if (userInputValue === '') {
+        hintElement.innerHTML = '<span style="color: red;">กรุณากรอกตัวเลข!!</span>';
+        return;
+    }
+
+    if (isNaN(userAnswer)) {
+        hintElement.innerHTML = '<span style="color: red;">กรุณากรอกตัวเลขเท่านั้น</span>';
+        return;
+    }
+
+    if (Math.abs(userAnswer - correctAnswer) < 0.0001) {
+        canPlay = true;
+        document.body.style.backgroundColor = currentPlayer === 'left' ? '#8B4513' : '#FFD700';
+        hintElement.innerHTML = '<span style="color: green;">คุณตอบถูก!! เลือกช่องที่จะลงได้เลย!</span>';
+        resetTimer();
+    } else {
+        // เมื่อตอบผิด ลด HP 20%
+        const newHP = playerHP[currentPlayer] - 20;
+        updateHPBar(currentPlayer, newHP);
+        
+        // ตรวจสอบว่า HP หมดหรือไม่
+        if (newHP <= 0) {
+            const winner = currentPlayer === 'left' ? 'right' : 'left';
+            scores[winner]++;
+            document.getElementById(`${winner}Score`).textContent = 
+                `ผู้เล่น ${winner === 'left' ? '1' : '2'}: ${scores[winner]}`;
+            alert(`ผู้เล่น ${winner === 'left' ? '1' : '2'} ชนะ! (HP ของฝ่ายตรงข้ามหมด)`);
+            resetGame();
+            return;
+        }
+
+        canPlay = false;
+        hintElement.innerHTML = '<span style="color: red;">คุณตอบผิด!! พยายามเข้าล่ะ!</span>';
+        switchPlayer();
+    }
+
+    document.getElementById('answer').value = '';
+    currentEquation = generateEquation();
+    document.getElementById('equation').textContent = `โจทย์: ${currentEquation.equation}`;
+}
+
+async function makeMove(col) {
+    if (!canPlay || isAnimating) return;
+    
+    const row = getLowestEmptyRow(col);
+    if (row === -1) return;
+    
+    isAnimating = true;
+    gameBoard[row][col] = currentPlayer;
+    
+    const cells = document.querySelectorAll('.cell');
+    for (let currentRow = 0; currentRow <= row; currentRow++) {
+        const index = currentRow * 7 + col;
+        cells[index].classList.add(currentPlayer === 'left' ? 'player1' : 'player2');
+        
+        if (currentRow > 0) {
+            const previousIndex = (currentRow - 1) * 7 + col;
+            cells[previousIndex].classList.remove('player1', 'player2');
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    
+    isAnimating = false;
+    
+    if (checkWin(row, col)) {
+        // เพิ่ม HP 30% เมื่อชนะ (ไม่เกิน 100%)
+        const newHP = Math.min(100, playerHP[currentPlayer] + 30);
+        updateHPBar(currentPlayer, newHP);
+        
+        scores[currentPlayer]++;
+        document.getElementById(`${currentPlayer}Score`).textContent = 
+            `ผู้เล่น ${currentPlayer === 'left' ? '1' : '2'}: ${scores[currentPlayer]}`;
+        await new Promise(resolve => setTimeout(resolve, 500));
+        alert(`ผู้เล่น ${currentPlayer === 'left' ? '1' : '2'} ชนะ!`);
+        resetGame();
+        return;
+    }
+    
+    if (checkDraw()) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        alert("เสมอ!");
+        resetGame();
+        return;
+    }
+    
+    switchPlayer();
+}
+
+</script>
+</body>
+</html>

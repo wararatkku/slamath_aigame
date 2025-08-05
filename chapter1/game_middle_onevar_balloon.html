@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สมการเชิงเส้น: การแข่งขัน</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<style>
+/* พื้นหลังโดยรวม */
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to bottom, #87CEFA, #f4f4f4); /* ไล่สีฟ้าจากฟ้าไปสีขาว */
+    text-align: center;
+    padding: 20px;
+}
+
+/* กล่องแสดงผลหลัก */
+.container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    max-width: 600px;
+    margin: 20px auto;
+}
+
+.level-selection {
+    margin: 10px 0;
+}
+
+input {
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: calc(100% - 22px); /* เผื่อขอบ */
+    max-width: 400px;
+}
+
+button {
+    padding: 10px 20px;
+    margin: 5px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #218838;
+}
+
+/* สไตล์สำหรับ #balloon-game */
+#balloon-game {
+    margin-top: 20px;
+    text-align: center;
+}
+
+/* กล่องลูกบอลและพื้นหลัง */
+#balloon-container {
+    position: relative;
+    height: 400px;
+    border: 2px solid #007bff;
+    overflow: hidden;
+    background: linear-gradient(to bottom, #87CEFA, #FFFFFF); /* ท้องฟ้าและเมฆ */
+    border-radius: 15px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    margin-top: 10px;
+}
+
+/* สไตล์ของลูกบอล */
+.balloon {
+    position: absolute;
+    width: 50px;
+    height: 70px;
+    background: radial-gradient(circle at bottom, #FF69B4, #FF1493); /* สีลูกบอลไล่สี */
+    border-radius: 50%;
+    border: 2px solid #FF69B4;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.balloon:hover {
+    transform: scale(1.1); /* ขยายขนาดเล็กน้อยเมื่อชี้ */
+}
+
+/* เงาลูกบอลให้มีมิติ */
+.balloon:before {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 15px;
+    background-color: #FF69B4;
+}
+
+/* สไตล์ส่วนคะแนน */
+h2 {
+    margin-top: 20px;
+}
+
+#score-balloon {
+    font-size: 18px;
+    margin: 10px;
+    color: #007bff;
+    font-weight: bold;
+}
+
+</style>
+
+<body>
+    <div class="container">
+        <h1>เกมสมการเชิงเส้น</h1>
+        <div class="level-selection">
+            <label for="level">เลือกระดับที่ต้องการ:</label>
+            <select id="level">
+                <option value="1">ง่าย</option>
+                <option value="2">ปานกลาง</option>
+                <option value="3">ยาก</option>
+            </select>
+        </div>
+        <p id="equation">สมการ: </p>
+        <input type="number" id="answer" placeholder="กรอกคำตอบที่นี่">
+        <button id="submit">ตรวจสอบคำตอบ</button>
+        <p id="feedback"></p>
+        <p>คะแนน: <span id="score">0</span></p>
+        <p>เวลาที่เหลือ: <span id="time">180</span> วินาที</p>
+        <h2>ตารางคะแนนสูงสุด</h2>
+        <ol id="highScores"></ol>
+    </div>
+
+    <div id="balloon-game">
+        <h2>เกมตีลูกบอล</h2>
+        <div id="balloon-container"></div>
+        <div id="score-balloon">คะแนน: 0</div>
+    </div>
+
+<script>
+//ค้ด JavaScript เกมสมการเชิงเส้นตัวแปรเดียว
+let score = 0;
+let balloonScore = 0;
+let timeLeft;
+let timer;
+let correctAnswer;
+let previousEquationIndex = -1;
+let usedEquations = [];
+const requiredBalloonScore = 5;
+const balloonTimeLimit = 10;
+
+const equationElement = document.getElementById('equation');
+const answerInput = document.getElementById('answer');
+const feedbackElement = document.getElementById('feedback');
+const scoreElement = document.getElementById('score');
+const timeElement = document.getElementById('time');
+const highScoresElement = document.getElementById('highScores');
+const levelSelect = document.getElementById('level');
+const balloonContainer = document.getElementById('balloon-container');
+const scoreBalloonElement = document.getElementById('score-balloon');
+
+const backgroundColors = ['#FFDDC1', '#FFABAB', '#FFC3A0', '#FF677D', '#D4A5A5'];
+
+const easyEquations = [
+    { a: 1, b: 3, c: 7 },
+    { a: 2, b: -4, c: 6 },
+    { a: 1, b: 2, c: 5 },
+    { a: 3, b: 1, c: 10 },
+    { a: 2, b: 5, c: 11 }
+];
+
+const mediumEquations = [
+    { a: 4, b: 6, c: 26 },
+    { a: -5, b: 15, c: 5 },
+    { a: 3, b: -7, c: 14 },
+    { a: 7, b: 2, c: 37 },
+    { a: -6, b: 3, c: -9 }
+];
+
+const hardEquations = [
+    { a: 9, b: -3, c: 60 },
+    { a: 10, b: 5, c: 105 },
+    { a: -8, b: 12, c: -68 },
+    { a: 15, b: -7, c: 113 },
+    { a: 18, b: 9, c: 153 }
+];
+
+// ฟังก์ชันสร้างคำใบ้ทั่วไปตามสมการ
+function generateHint(a, b, c) {
+    feedbackElement.textContent = `เกร็ดความรู้: ย้าย ${b > 0 ? b : Math.abs(b)} ไปอีกฝั่ง แล้วหารด้วย ${a} เพื่อหาค่า x`;
+}
+
+// เริ่มเกม
+function startGame() {
+    resetScore();
+    resetTimer();
+    resetUsedEquations();
+    generateEquation();
+    answerInput.disabled = false;
+    answerInput.focus();
+}
+
+// ล้างคะแนน
+function resetScore() {
+    score = 0;
+    scoreElement.textContent = score;
+}
+
+// ตั้งเวลาใหม่
+function resetTimer() {
+    clearInterval(timer);
+    timeLeft = 180;
+    timeElement.textContent = Math.floor(timeLeft / 60) + ":" + (timeLeft % 60).toString().padStart(2, '0');
+    timer = setInterval(() => {
+        timeLeft--;
+        timeElement.textContent = Math.floor(timeLeft / 60) + ":" + (timeLeft % 60).toString().padStart(2, '0');
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            feedbackElement.textContent = "หมดเวลา! คะแนนรวม: " + score;
+            saveHighScore(score);
+            resetGame();
+        }
+    }, 1000);
+}
+
+// รีเซ็ตโจทย์ที่ใช้แล้ว
+function resetUsedEquations() {
+    usedEquations = [];
+}
+
+// สร้างสมการตามระดับที่เลือก
+function generateEquation() {
+    const level = levelSelect.value;
+    let equations;
+    if (level === '1') {
+        equations = easyEquations;
+    } else if (level === '2') {
+        equations = mediumEquations;
+    } else {
+        equations = hardEquations;
+    }
+
+    // รีเซ็ตโจทย์เมื่อใช้ไปครบทุกข้อแล้ว
+    if (usedEquations.length >= equations.length) {
+        resetUsedEquations();
+    }
+
+    let randomIndex;
+    do {
+        randomIndex = Math.floor(Math.random() * equations.length);
+    } while (usedEquations.includes(randomIndex));
+
+    usedEquations.push(randomIndex);
+    const { a, b, c } = equations[randomIndex];
+    equationElement.textContent = `สมการ: ${a}x + ${b} = ${c}`;
+    correctAnswer = (c - b) / a;
+
+    // เรียกคำใบ้ทั่วไป
+    generateHint(a, b, c);
+
+    document.body.style.backgroundColor = backgroundColors[Math.floor(Math.random() * backgroundColors.length)];
+}
+
+document.getElementById('submit').addEventListener('click', () => {
+    const userAnswer = parseFloat(answerInput.value);
+    if (userAnswer === correctAnswer) {
+        feedbackElement.textContent = "ถูกต้อง!";
+        score++;
+        scoreElement.textContent = score;
+        answerInput.value = '';
+        generateEquation();
+    } else {
+        feedbackElement.textContent = `ไม่ถูกต้อง! คุณต้องยิงลูกโป่งให้ได้ ${requiredBalloonScore} คะแนนภายใน ${balloonTimeLimit} วินาที!`;
+        answerInput.value = '';
+        startBalloonGame();
+    }
+});
+
+// เริ่มเกมยิงลูกโป่ง
+function startBalloonGame() {
+    balloonScore = 0;
+    scoreBalloonElement.textContent = "คะแนน: " + balloonScore;
+    balloonContainer.innerHTML = ''; 
+    answerInput.disabled = true;
+
+    let balloonStartTime = Date.now();
+    feedbackElement.textContent = `คุณต้องทำ ${requiredBalloonScore} คะแนนภายใน ${balloonTimeLimit} วินาที!`;
+
+    let balloonInterval = setInterval(() => {
+        let elapsedTime = (Date.now() - balloonStartTime) / 1000;
+        if (elapsedTime >= balloonTimeLimit) {
+            clearInterval(balloonInterval);
+            feedbackElement.textContent = "หมดเวลาในเกมตีลูกบอล! ลองอีกครั้ง";
+            answerInput.disabled = true; 
+        } else if (balloonScore >= requiredBalloonScore) {
+            clearInterval(balloonInterval);
+            feedbackElement.textContent = "สำเร็จ! กลับไปตอบโจทย์ต่อไปได้แล้ว";
+            answerInput.disabled = false; 
+            answerInput.focus();
+            generateEquation();
+        } else {
+            createBalloon(); 
+        }
+    }, 1000);
+}
+
+function createBalloon() {
+    const balloon = document.createElement('div');
+    balloon.classList.add('balloon');
+    balloon.style.left = Math.random() * (balloonContainer.clientWidth - 50) + 'px';
+    balloon.style.bottom = '-70px';
+    balloonContainer.appendChild(balloon);
+
+    let balloonMoveInterval = setInterval(() => {
+        let balloonBottom = parseInt(balloon.style.bottom);
+        if (balloonBottom < balloonContainer.clientHeight) {
+            balloon.style.bottom = (balloonBottom + 2) + 'px';
+        } else {
+            clearInterval(balloonMoveInterval);
+            balloonContainer.removeChild(balloon);
+        }
+    }, 20);
+
+    balloon.addEventListener('click', () => {
+        clearInterval(balloonMoveInterval);
+        balloonContainer.removeChild(balloon);
+        balloonScore++;
+        scoreBalloonElement.textContent = "คะแนน: " + balloonScore;
+    });
+}
+
+// บันทึกคะแนนสูงสุด
+function saveHighScore(newScore) {
+    const highScores = JSON.parse(localStorage.getItem('highScores')) || [];
+    highScores.push(newScore);
+    highScores.sort((a, b) => b - a);
+    highScores.splice(5);
+    localStorage.setItem('highScores', JSON.stringify(highScores));
+    displayHighScores();
+}
+
+// แสดงคะแนนสูงสุด
+function displayHighScores() {
+    const highScores = JSON.parse(localStorage.getItem('highScores')) || [];
+    highScoresElement.innerHTML = highScores.map(score => `<li>${score}</li>`).join('');
+}
+
+// ล้างคะแนนเมื่อเปลี่ยนโหมด
+levelSelect.addEventListener('change', () => {
+    resetScore();
+    startGame();
+});
+
+// เริ่มเกมครั้งแรก
+startGame();
+
+
+
+</script>
+</body>
+</html>
+
