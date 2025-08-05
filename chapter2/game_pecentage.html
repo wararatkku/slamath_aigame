@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เกมส์ percentage</title>
+
+</head>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+        color: #333;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+    
+    /* การตั้งค่าสำหรับกล่องเกม */
+    .game-container {
+        width: 80%;
+        max-width: 1200px;
+        padding: 40px;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* ตัวละคร */
+    .character-container {
+        display: flex;
+        justify-content: space-around;
+        margin: 40px 0;
+    }
+    
+    .character {
+        width: 40%;
+        text-align: center;
+    }
+    
+    /* หลอดพลังชีวิต (HP) */
+    .hp-bar {
+        width: 100%;
+        background-color: #ddd;
+        height: 30px;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 15px;
+    }
+    
+    .hp-bar-fill {
+        height: 100%;
+        background-color: #4CAF50;
+        transition: width 0.3s;
+    }
+    
+    /* หลอดพลังเวท (MP) */
+    .mp-bar {
+        width: 100%;
+        height: 20px;
+        background-color: #ddd;
+        border-radius: 5px;
+        margin-top: 5px;
+    }
+    
+    .mp-bar-fill {
+        height: 100%;
+        background-color: #3F51B5;
+        border-radius: 5px;
+        transition: width 0.3s;
+    }
+    
+    /* ปุ่มคำสั่งการกระทำ */
+    .action-buttons {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 30px;
+    }
+    
+    .action-button {
+        padding: 15px 30px;
+        font-size: 18px;
+        cursor: pointer;
+        border: none;
+        border-radius: 8px;
+        background-color: #e57373;
+        color: #fff;
+        transition: background-color 0.3s;
+    }
+    
+    .action-button:hover {
+        background-color: #d32f2f;
+    }
+    
+    /* ปุ่ม Ultimate Skill */
+    #ulti {
+        padding: 15px 30px;
+        font-size: 18px;
+        background-color: #9C27B0;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 10px;
+        transition: background-color 0.3s;
+    }
+    
+    #ulti:hover {
+        background-color: #7b1fa2;
+    }
+    
+    /* บันทึกการต่อสู้ */
+    .battle-log {
+        margin-top: 30px;
+        background-color: #eee;
+        padding: 20px;
+        border-radius: 5px;
+        height: 200px;
+        overflow-y: auto;
+        text-align: left;
+        font-size: 16px;
+    }
+    
+    /* แสดงเลเวลที่มุมขวาล่าง */
+    #level-display {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 18px;
+    }
+    
+    
+    button {
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #4CAF50;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    
+    button:hover {
+        background-color: #45a049;
+    }
+    .popup {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+    
+    .popup-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        width: 80%;
+        max-width: 400px;
+        text-align: center;
+    }
+    
+    
+    .popup button {
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #4CAF50;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    
+    .popup button:hover {
+        background-color: #45a049;
+    }
+    </style>
+<body>
+    <div class="game-container">
+        <h1 style="text-align: center;">เกมส์ร้อยละ สู้กับ Enemy AI</h1>
+        <h1 style="text-align: center;">เอาตัวรอดจากที่นี่</h1>
+
+        <!-- ตัวละครผู้เล่น -->
+        <div class="character-container">
+            <div class="character player">
+                <h2>Player</h2>
+                <div class="hp-bar">
+                    <div id="player-hp-bar" class="hp-bar-fill"></div>
+                </div>
+                <p>HP: <span id="player-hp">100</span></p>
+                
+                <div class="mp-bar">
+                    <div id="player-mp-bar" class="mp-bar-fill"></div>
+                </div>
+                <p>MP: <span id="player-mp">100</span></p>
+            </div>
+
+            <!-- ตัวละครศัตรู -->
+            <div class="character enemy">
+                <h2>Enemy</h2>
+                <div class="hp-bar">
+                    <div id="enemy-hp-bar" class="hp-bar-fill"></div>
+                </div>
+                <p>HP: <span id="enemy-hp">100</span></p>
+
+                <div class="mp-bar">
+                    <div id="enemy-mp-bar" class="mp-bar-fill"></div>
+                </div>
+                <p>MP: <span id="enemy-mp">100</span></p>
+            </div>
+        </div>
+
+        <!-- ปุ่มคำสั่งต่างๆ -->
+        <div class="action-buttons">
+            <button id="attack" class="action-button">Attack</button>
+            <button id="defend" class="action-button">Defend</button>
+            <button id="magic" class="action-button">Magic</button>
+            <button id="item" class="action-button">Item</button>
+            <button id="ulti" class="action-button">Ultimate Skill</button> <!-- ปุ่ม Ultimate Skill -->
+        </div>
+        
+        <!-- บันทึกการต่อสู้ -->
+        <div id="battle-log" class="battle-log"></div>
+    </div>
+
+    <!-- Story Popup -->
+    <div id="story-popup" class="popup">
+        <div class="popup-content">
+            <h2>เรื่องราวของเกม</h2>
+            <p>คุณต้องเอาตัวรอดจากสถานที่ที่ไม่รู้จักโดยการตอบคำถามและต่อสู้กับศัตรูต่างๆ ที่คุณพบเจอ</p>
+            <button id="story-next-btn">ถัดไป</button>
+        </div>
+    </div>
+
+    <!-- Rules Popup -->
+    <div id="rules-popup" class="popup">
+        <div class="popup-content">
+            <h2>กฎการเล่น</h2>
+            <p>1. ผู้เล่นต้องตอบคำถามเพื่อทำการโจมตีหรือใช้สกิลต่างๆ</p>
+            <p>2. ค่าพลังชีวิต (HP) และพลังเวท (MP) จะถูกอัปเดตทุกครั้งที่มีการกระทำ</p>
+            <p>3. เมื่อ HP ของผู้เล่นหรือศัตรูลดลงจนถึง 0 ผู้ที่เหลือจะเป็นผู้ชนะ</p>
+            <button id="start-game-btn">เริ่มเกม</button>
+        </div>
+    </div>
+
+    <!-- Win Popup -->
+    <div id="win-popup" class="popup" style="display: none;">
+        <p>คุณชนะ! ไปด่านถัดไป...</p>
+        <button id="next-level-btn">ถัดไป</button>
+    </div>
+
+    <!-- Lose Popup -->
+<div id="lose-popup" class="popup" style="display: none;">
+    <div class="popup-content">
+        <h2>นักรบผ่ายแผ้</h2>
+        <p>คุณล้มเหลวในการเอาตัวรอดจากศัตรูในด่านนี้... แต่การต่อสู้ยังไม่จบ!</p>
+        <button id="restart-game-btn">เริ่มใหม่</button>
+    </div>
+</div>
+
+<!-- End Game Popup -->
+<div id="end-game-popup" class="popup" style="display: none;">
+    <div class="popup-content">
+        <h2>นักรบรอด!</h2>
+        <p>คุณได้ผ่านทุกด่านและเอาชนะศัตรูทั้งหมด! ขอขอบคุณที่ร่วมการต่อสู้ในเกมนี้!</p>
+        <button id="restart-game-btn">เริ่มใหม่</button>
+    </div>
+</div>
+
+<button id="check-game-status-btn">เช็คสถานะเกม</button>
+
+
+<script>
+    let playerHp = 100;
+    let playerMp = 100;
+    let enemyHp = 100;
+    let enemyMp = 100;
+    let attackMultiplier = 1;
+    let correctAnswersStreak = 0;
+    let currentLevel = 1;  // ตัวแปรที่เก็บข้อมูลด่านปัจจุบัน
+    const totalLevels = 5;  // จำนวนด่านทั้งหมด
+    const battleLog = document.getElementById("battle-log");
+    
+    document.getElementById("attack").addEventListener("click", () => askQuestion("attack"));
+    document.getElementById("defend").addEventListener("click", () => askQuestion("defend"));
+    document.getElementById("magic").addEventListener("click", () => askQuestion("magic"));
+    document.getElementById("item").addEventListener("click", () => askQuestion("item"));
+    document.getElementById("ulti").addEventListener("click", () => useUltimateSkill());
+    
+    document.getElementById("restart-game-btn").addEventListener("click", function() {
+        document.getElementById("lose-popup").style.display = "none";
+        document.getElementById("end-game-popup").style.display = "none";
+        document.getElementById("win-popup").style.display = "none";  // ซ่อน Popup การชนะ
+    
+        currentLevel = 1;  // รีเซ็ตด่าน
+        startGame();  // เริ่มเกมใหม่
+    });
+    
+    let hasSeenStory = false;  // สถานะการแสดงเนื้อเรื่อง
+    
+    // การจัดการการแสดงผล popup
+    document.getElementById("story-next-btn").addEventListener("click", function() {
+        document.getElementById("story-popup").style.display = "none";  // ซ่อน story-popup
+    
+        if (!hasSeenStory) {
+            document.getElementById("rules-popup").style.display = "flex"; // แสดง rules-popup
+            hasSeenStory = true;  // บันทึกว่าแสดงเนื้อเรื่องแล้ว
+        } else {
+            startGame();  // ถ้าแสดงกฎแล้ว เริ่มเกม
+        }
+    });
+    
+    document.getElementById("start-game-btn").addEventListener("click", function() {
+        document.getElementById("rules-popup").style.display = "none"; // ซ่อน rules-popup
+        startGame();  // เริ่มเกม
+    });
+    
+    document.getElementById("next-level-btn").addEventListener("click", function() {
+        document.getElementById("win-popup").style.display = "none";  // ซ่อน win-popup
+        currentLevel++;  // เพิ่มด่าน
+        if (currentLevel <= totalLevels) {
+            startGame();  // เริ่มเกมในด่านถัดไป
+        } else {
+            showEndGamePopup();  // เมื่อผ่านด่านสุดท้ายแล้ว แสดง popup การจบเกม
+        }
+    });
+    
+    // ฟังก์ชันเริ่มเกม
+    function startGame() {
+        playerHp = 100;
+        playerMp = 100;
+        enemyHp = 100 + (currentLevel - 1) * 50;  // เพิ่ม HP ของศัตรูตามด่าน
+        enemyMp = 100;
+        attackMultiplier = 1;
+        correctAnswersStreak = 0;
+    
+        updateHpBar("player", playerHp);
+        updateHpBar("enemy", enemyHp);
+        updateMpBar("player", playerMp);
+        updateMpBar("enemy", enemyMp);
+    
+        logMessage(`ด่านที่ ${currentLevel}: เกมเริ่มต้น! ขอให้โชคดี!`);
+    }
+    
+    // ฟังก์ชันถามคำถาม
+    function askQuestion(action) {
+        if (playerHp <= 0 || enemyHp <= 0) return;
+    
+        const questionObj = getRandomQuestion();
+        const userAnswer = parseFloat(prompt(questionObj.question));
+    
+        if (isNaN(userAnswer)) {
+            logMessage("กรุณากรอกตัวเลขเท่านั้น!");
+            return;
+        }
+    
+        if (userAnswer === questionObj.answer) {
+            logMessage(`คำตอบถูกต้อง! การกระทำของคุณ (${action}) สำเร็จ!`);
+            correctAnswersStreak++;
+            handleAction(action);
+        } else {
+            logMessage("คำตอบผิด! ศัตรูโจมตีคุณกลับทันที");
+            correctAnswersStreak = 0;
+            attackMultiplier = 1;
+            enemyCounterAttack();
+        }
+    }
+    
+    // ฟังก์ชันจัดการการกระทำของผู้เล่น
+    function handleAction(action) {
+        switch(action) {
+            case "attack":
+                playerAttack();
+                break;
+            case "defend":
+                defend();
+                break;
+            case "magic":
+                castMagic();
+                break;
+            case "item":
+                useItem();
+                break;
+        }
+    }
+    
+    function playerAttack() {
+        const baseDamage = getRandomDamage(10, 20);
+        const damage = Math.round(baseDamage * attackMultiplier);
+        enemyHp -= damage;
+        updateHpBar("enemy", enemyHp); // อัปเดต HP ของศัตรู
+        logMessage(`คุณโจมตีศัตรู ทำความเสียหาย ${damage} หน่วย (พลังโจมตี x${Math.round(attackMultiplier)})`);
+    
+        if (enemyHp <= 0) {
+            logMessage("คุณชนะ!");
+            showWinPopup(); // แสดง popup การชนะ
+        } else {
+            attackMultiplier += 0.2;
+            enemyCounterAttack();
+        }
+    }
+    
+    function castMagic() {
+        if (playerMp < 10) {
+            logMessage("คุณไม่มีพลังเวทพอในการใช้เวทมนตร์");
+            return;
+        }
+    
+        const magicDamage = getRandomDamage(15, 25);
+        enemyHp -= magicDamage;
+        playerMp -= 10;
+        updateHpBar("enemy", enemyHp); // อัปเดต HP ของศัตรู
+        updateMpBar("player", playerMp); // อัปเดต MP ของผู้เล่น
+    
+        logMessage(`คุณใช้เวทมนตร์ ทำความเสียหาย ${magicDamage} หน่วย`);
+    
+        if (enemyHp <= 0) {
+            logMessage("คุณชนะ!");
+            showWinPopup(); // แสดง popup การชนะ
+        } else {
+            enemyCounterAttack();
+        }
+    }
+    
+    function useItem() {
+        const healAmount = 20;
+    
+        if (playerMp < 10) {
+            logMessage("คุณไม่มีพลังเวทพอในการใช้ไอเทม");
+            return;
+        }
+    
+        playerHp = Math.min(playerHp + healAmount, 100); // ฟื้นฟู HP แต่ไม่เกิน 100
+        updateHpBar("player", playerHp);  // อัปเดต HP ของผู้เล่น
+        playerMp -= 10;
+        updateMpBar("player", playerMp);  // อัปเดต MP ของผู้เล่น
+    
+        logMessage("คุณใช้ไอเทม ฟื้นฟูพลังชีวิต 20 หน่วย และเสีย MP 10 หน่วย");
+    
+        attackMultiplier = 1;
+        enemyCounterAttack();
+    }
+    
+    // ฟังก์ชัน Ultimate Skill
+    function useUltimateSkill() {
+        if (correctAnswersStreak < 5) {
+            logMessage(`คุณต้องตอบคำถามให้ถูกติดต่อกัน 5 ครั้งก่อนจึงจะใช้ Ultimate Skill ได้ (ปัจจุบัน: ${correctAnswersStreak}/5)`);
+            return;
+        }
+    
+        if (playerMp < 50) {
+            logMessage("คุณไม่มีพลังเวทพอในการใช้ Ultimate Skill");
+            return;
+        }
+    
+        const ultiDamage = getRandomDamage(50, 70);
+        enemyHp -= ultiDamage;
+        playerMp -= 50;
+    
+        updateHpBar("enemy", enemyHp);
+        updateMpBar("player", playerMp);
+    
+        logMessage(`คุณใช้ Ultimate Skill ทำความเสียหาย ${ultiDamage} หน่วย`);
+    
+        if (enemyHp <= 0) {
+            logMessage("คุณชนะ!");
+            showWinPopup(); // แสดง popup การชนะ
+        } else {
+            enemyCounterAttack();
+        }
+    }
+    
+    // ฟังก์ชันสุ่มคำถาม
+    function getRandomQuestion() {
+        const questions = [
+            { question: "ร้อยละ 20 ของ 50 คือเท่าไร?", answer: 10 },
+            { question: "ร้อยละ 50 ของ 200 คือเท่าไร?", answer: 100 },
+            { question: "ร้อยละ 10 ของ 70 คือเท่าไร?", answer: 7 },
+            { question: "ถ้ามีร้อยละ 25 ของ 80 จะได้เท่าไร?", answer: 20 },
+            { question: "ร้อยละ 15 ของ 60 เท่ากับเท่าไร?", answer: 9 }
+        ];
+    
+        return questions[Math.floor(Math.random() * questions.length)];
+    }
+    
+    // ฟังก์ชันสุ่มความเสียหาย
+    function getRandomDamage(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+    
+    function updateHpBar(character, hp) {
+        const hpBar = document.getElementById(`${character}-hp-bar`);
+        const hpDisplay = document.getElementById(`${character}-hp`);
+        hpBar.style.width = `${(hp / 100) * 100}%`;
+        hpDisplay.textContent = hp;  // แสดงค่าผู้เล่น/ศัตรู HP
+    
+        if (hp > 50) {
+            hpBar.style.backgroundColor = "#4CAF50"; // สีเขียว
+        } else if (hp > 20) {
+            hpBar.style.backgroundColor = "#FFA500"; // สีส้ม
+        } else {
+            hpBar.style.backgroundColor = "#FF0000"; // สีแดง
+        }
+    }
+    
+    // ฟังก์ชันอัปเดต MP Bar
+    function updateMpBar(character, mp) {
+        const mpBar = document.getElementById(`${character}-mp-bar`);
+        const mpDisplay = document.getElementById(`${character}-mp`);
+        mpBar.style.width = `${(mp / 100) * 100}%`;
+        mpDisplay.textContent = mp;  // แสดงค่าผู้เล่น/ศัตรู MP
+    }
+    
+    // ฟังก์ชันแสดงข้อความใน battle log
+    function logMessage(message) {
+        const newMessage = document.createElement("p");
+        newMessage.textContent = message;
+        battleLog.appendChild(newMessage);
+        battleLog.scrollTop = battleLog.scrollHeight;
+    }
+    
+    // ฟังก์ชันตอบโต้ของศัตรู
+    function enemyCounterAttack() {
+        const damage = getRandomDamage(5, 15);
+        playerHp -= damage;
+        updateHpBar("player", playerHp);
+        logMessage(`ศัตรูโจมตีคุณทำความเสียหาย ${damage} หน่วย`);
+    
+        if (playerHp <= 0) {
+            showLosePopup();  // แสดง popup เมื่อผู้เล่นแพ้
+        }
+    }
+    
+    // ฟังก์ชันเมื่อผู้เล่นชนะ
+    function showWinPopup() {
+        if (currentLevel === totalLevels) {
+            showEndGamePopup();  // แสดง popup เมื่อผู้เล่นเคลียร์ด่านสุดท้าย
+        } else {
+            document.getElementById("win-popup").style.display = "flex";  // แสดง Popup การชนะ
+            logMessage("คุณชนะ! ไปด่านถัดไป...");
+        }
+    }
+    
+    // ฟังก์ชันเมื่อผู้เล่นแพ้
+    function showLosePopup() {
+        document.getElementById("lose-popup").style.display = "flex";  // แสดง Popup เมื่อแพ้
+        logMessage("คุณแพ้! เกมจบลงแล้ว.");
+    }
+    
+    // ฟังก์ชันเมื่อผู้เล่นจบเกม
+    function showEndGamePopup() {
+        document.getElementById("end-game-popup").style.display = "flex";  // แสดง Popup เมื่อจบเกม
+        logMessage("คุณได้ผ่านทุกด่านแล้ว! ขอบคุณที่เล่น!");
+    }
+    </script>
+
+</body>
+</html>

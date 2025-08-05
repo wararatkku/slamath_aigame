@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>game-wrapper</title>
+</head>
+<style>
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+    background: #8B4513;
+    padding: 20px;
+}
+.highlight-x {
+  background-color: rgba(128, 0, 128, 0.3); /* สีม่วงอ่อน */
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+/* ไฮไลท์สำหรับ Y */
+.highlight-y {
+  background-color: rgba(0, 128, 128, 0.3); /* สีฟ้าอมเขียวอ่อน */
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+/* ไฮไลท์สำหรับเครื่องหมาย + */
+.highlight-plus {
+  background-color: rgba(0, 128, 0, 0.3); /* สีเขียวอ่อน */
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+/* ไฮไลท์สำหรับเครื่องหมาย - */
+.highlight-minus {
+  background-color: rgba(255, 0, 0, 0.3); /* สีแดงอ่อน */
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.game-wrapper {
+    display: flex;
+    gap: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.player-list {
+    width: 200px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.player {
+    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 5px;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+#player1 {
+    background: #FFB5C5;
+}
+
+#player2 {
+    background: #800080;
+}
+
+#bot {
+    background: #0000FF;
+}
+
+.health {
+    margin-top: 5px;
+    height: 10px;
+    background: #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.health-bar {
+    height: 100%;
+    background: #2ecc71; /* สีเขียว */
+    transition: width 0.3s; /* การเคลื่อนไหวเมื่อแถบลดลง */
+}
+
+.game-container {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.controls {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.player.active {
+    box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    transform: scale(1.15);
+}
+
+
+.coordinate-sets {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.coordinate-set {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.coordinate-set label {
+    min-width: 60px;
+}
+
+input {
+    padding: 5px;
+    width: 60px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+button {
+    padding: 8px 15px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background: #2980b9;
+    transform: scale(1.05);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ตกแต่งแถบคำแนะนำการเล่น */
+.game-instructions {
+    background: #FAFAD2; /* สีพื้นหลัง (LightGoldenRodYellow) */
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.game-instructions h4 {
+    color: #8B4513; /* สีหัวข้อ (SaddleBrown) */
+    margin-bottom: 10px; /* เพิ่มระยะห่างด้านล่าง */
+}
+
+.game-instructions ul {
+    list-style-type: none; /* ลบจุดหน้ารายการ */
+    padding-left: 0; /* ลบการเติมทางซ้าย */
+}
+
+.game-instructions ul li {
+    margin: 8px 0; /* เพิ่มระยะห่างระหว่างรายการ */
+    font-size: 16px; /* ขนาดฟอนต์ */
+    color: #4682B4; /* สีข้อความ (SteelBlue) */
+}
+
+.warning {
+    color: red; /* สีข้อความสำหรับข้อควรระวัง */
+    font-weight: bold; /* ทำให้ข้อความหนาขึ้น */
+}
+
+.instruction-box {
+    background: #F5DEB3; /* สีพื้นหลังโทนนวล (Wheat) */
+    color: black; /* สีข้อความ */
+    padding: 20px; /* เพิ่มการเติม */
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    width: 260px; /* เพิ่มขนาดให้ใหญ่ขึ้น */
+}
+</style>
+
+<body>
+<div class="game-wrapper">
+    <div class="player-list">
+        <div id="player1" class="player">
+            Player 1
+            <div class="health">
+                <div class="health-bar" style="width: 100%"></div>
+            </div>
+        </div>
+        <div id="player2" class="player">
+            Player 2
+            <div class="health">
+                <div class="health-bar" style="width: 100%"></div>
+            </div>
+        </div>
+        <div id="bot" class="player">
+            Bot
+            <div class="health">
+                <div class="health-bar" style="width: 100%"></div>
+            </div>
+        </div>
+
+        <div class="game-instructions">
+            <h4 style="color: blue;">ข้อมูลจำเป็น</h4> <!-- เปลี่ยนสีเป็นน้ำเงิน -->
+            <span>หาก <span class="highlight-x">X</span> เป็น <span class="highlight-minus">-</span> จะเคลื่อนไปทางซ้าย</span><br>
+            <span>หาก <span class="highlight-x">X</span> เป็น <span class="highlight-plus">+</span> จะเคลื่อนไปทางขวา</span><br>
+            <span>หาก <span class="highlight-y">Y</span> เป็น <span class="highlight-minus">-</span> จะเคลื่อนลงด้านล่าง</span><br>
+            <span>หาก <span class="highlight-y">Y</span> เป็น <span class="highlight-plus">+</span> จะเคลื่อนลงด้านบน</span><br>
+            <span style="color: red; font-weight: bold;">ข้อควรระวัง</span><br>
+            <span>Point 1 และ Point 2 ซ้ำกันไม่ได้</span>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <canvas id="gameCanvas" width="385" height="385"></canvas>
+        <div class="controls">
+            <div class="coordinate-sets">
+                <div class="coordinate-set">
+                    <label>Point 1:</label>
+                    <input type="number" id="x1Coord" placeholder="X1" min="-5" max="5">
+                    <input type="number" id="y1Coord" placeholder="Y1" min="-5" max="5">
+                </div>
+                <div class="coordinate-set">
+                    <label>Point 2:</label>
+                    <input type="number" id="x2Coord" placeholder="X2" min="-5" max="5">
+                    <input type="number" id="y2Coord" placeholder="Y2" min="-5" max="5">
+                </div>
+            </div>
+            <button onclick="shoot()">Shoot</button>
+            <button onclick="resetGame()">Reset</button>
+        </div>
+    </div>
+
+    <div class="instruction-box">
+        <h4 style="color: #e340ac; font-weight: bold; text-align: center;">กติกา/วิธีการเล่น</h4>
+        <ul>
+            <li>ผุ้เล่นทุกคนต้องกำจัด Bot ออกจากแมพ</li>
+            <li>Player 1 และ Player 2 จะมี HP = 3</li>
+            <li>Bot จะมี HP = 9</li>
+            <li>ผู้เล่น Player 1 และ Player 2 เป็นทีมกัน</li>
+            <li>ผู้เล่นไม่สามารถยิงกันได้</li>
+            <li>ใน Point จะมีช่องให้กรอก 2 ช่อง คือแกน X และ แกน Y</li>
+            <li>Point 1: จะกรอก แกน X และ แกน Y ได้ไม่เกิน 3 ช่องจากตัวละคร (ที่เป็นการยิง 0° หรือ 90°)</li>
+            <li>การยิงนอกเหนือจาก 0° หรือ 90° จะยิงได้ทีละ 2 ช่อง</li>
+            <li>Point 2: เอาไว้ยิงพิกัดที่ Bot อยู่</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const gridSize = 35;
+const gridCount = 11;
+const obstacleRadius = 15;
+const OBSTACLE_COUNT = 12;
+const ANIMATION_DURATION = 1000;
+
+let players = [];
+let bot = null;
+let obstacles = [];
+let currentPlayer = 0;
+let isBotTurn = false;
+let isAnimating = false;
+
+function updateGameState(turn) {
+    document.querySelectorAll('.player').forEach(p => p.classList.remove('active'));
+    if (turn === 'bot') {
+        document.querySelector('#bot').classList.add('active');
+    } else {
+        const activePlayer = document.querySelector(`#player${currentPlayer + 1}`);
+        if (activePlayer && players[currentPlayer].hp > 0) {
+            activePlayer.classList.add('active');
+        }
+    }
+}
+
+function resetGame() {
+    initGame();
+}
+
+function randomPosition() {
+    let position;
+    do {
+        position = {
+            x: Math.floor(Math.random() * 11) - 5,
+            y: Math.floor(Math.random() * 11) - 5
+        };
+    } while (isPositionOccupied(position));
+    return position;
+}
+
+function isPositionOccupied(pos) {
+    return [...players, bot, ...obstacles].some(item => 
+        item && Math.abs(item.x - pos.x) < 1 && Math.abs(item.y - pos.y) < 1
+    );
+}
+
+function initGame() {
+    players = [
+        { x: Math.floor(Math.random() * 9) - 4, y: Math.floor(Math.random() * 7) - 3, color: '#FFB5C5', hp: 3 },
+        { x: Math.floor(Math.random() * 9) - 4, y: Math.floor(Math.random() * 7) - 3, color: '#800080', hp: 3 }
+    ];
+    while (players[0].x === players[1].x && players[0].y === players[1].y) {
+        players[1].x = Math.floor(Math.random() * 9) - 4;
+        players[1].y = Math.floor(Math.random() * 7) - 3;
+    }
+
+    bot = { x: 4, y: Math.floor(Math.random() * 7) - 3, color: '#0000FF', hp: 9 };
+
+    currentPlayer = 0;
+    isBotTurn = false;         
+    isAnimating = false;
+
+    randomizeAllPositions();
+
+    // Update initial health bar values
+    players.forEach((player, i) => {
+        const healthBar = document.querySelector(`#player${i + 1} .health-bar`);
+        healthBar.style.width = '100%';
+    });
+    const botHealthBar = document.querySelector('#bot .health-bar');
+    botHealthBar.style.width = '100%';
+    
+    updateGameState('player');
+    drawGame();
+}
+
+function checkCollisionsAlongPath(startX, startY, endX, endY) {
+    const targets = [...players, bot];
+    
+    targets.forEach(target => {
+        if (!target || target.hp <= 0) return;
+        
+        const isOnPath = lineIntersectsPoint(
+            startX, startY,
+            endX, endY,
+            target.x, target.y
+        );
+        
+        if (isOnPath) {
+            if (target.lastHitTime !== `${startX},${startY},${endX},${endY}`) {
+                target.hp--;
+                target.lastHitTime = `${startX},${startY},${endX},${endY}`;
+                
+                const maxHp = target === bot ? 9 : 3;
+                const healthPercentage = (target.hp / maxHp) * 100;
+                
+                // Update health bar for affected target
+                if (target === bot) {
+                    const botHealthBar = document.querySelector('#bot .health-bar');
+                    botHealthBar.style.width = `${healthPercentage}%`;
+                } else {
+                    const playerIndex = players.indexOf(target);
+                    const playerHealthBar = document.querySelector(`#player${playerIndex + 1} .health-bar`);
+                    playerHealthBar.style.width = `${healthPercentage}%`;
+                }
+
+                if (target.hp <= 0) {
+                    setTimeout(() => {
+                        if (target === bot) {
+                            alert('Players win!');
+                        } else {
+                            alert(`Player ${playerIndex + 1} is defeated!`);
+                        }
+                        initGame();
+                    }, 500);
+                    return;
+                } else {
+                    const newPosition = randomPosition();
+                    target.x = newPosition.x;
+                    target.y = newPosition.y;
+                    drawGame();
+                }
+            }
+        }
+    });
+}
+
+function lineIntersectsPoint(x1, y1, x2, y2, px, py) {
+    // คำนวณระยะห่างจากจุดถึงเส้น
+    const d = Math.abs(
+        (x2 - x1) * (y1 - py) - (x1 - px) * (y2 - y1)
+    ) / Math.sqrt(
+        Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2)
+    );
+    
+    // เช็คว่าจุดอยู่ระหว่างจุดเริ่มต้นและจุดสิ้นสุดหรือไม่
+    const dot = (px - x1) * (x2 - x1) + (py - y1) * (y2 - y1);
+    const len_sq = Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2);
+    
+    // ถ้าระยะห่างน้อยกว่า 0.5 และจุดอยู่ระหว่างจุดเริ่มต้นและจุดสิ้นสุด
+    return d < 0.5 && dot >= 0 && dot <= len_sq;
+}
+
+function drawGame() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    
+    // วาดเส้นกริด
+    ctx.beginPath();
+    ctx.strokeStyle = '#ddd';
+    ctx.lineWidth = 1;
+
+    for (let i = -5; i <= 5; i++) {
+        const x = centerX + (i * gridSize);
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        
+        const y = centerY + (i * gridSize);
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+    }
+    ctx.stroke();
+
+    // วาดแกนหลัก
+    ctx.beginPath();
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.moveTo(0, centerY);
+    ctx.lineTo(canvas.width, centerY);
+    ctx.moveTo(centerX, 0);
+    ctx.lineTo(centerX, canvas.height);
+    ctx.stroke();
+
+    // วาดตัวเลขบนแกน
+    ctx.fillStyle = '#000';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    for (let i = -5; i <= 5; i++) {
+        if (i !== 0) {
+            ctx.fillText(i.toString(), centerX + (i * gridSize), centerY + 20);
+            ctx.fillText(i.toString(), centerX - 20, centerY - (i * gridSize));
+        }
+    }
+
+    // วาดสิ่งกีดขวาง
+    obstacles.forEach(obs => {
+        ctx.beginPath();
+        ctx.fillStyle = '#8B4513';
+        const obsX = centerX + (obs.x * gridSize);
+        const obsY = centerY - (obs.y * gridSize);
+        ctx.arc(obsX, obsY, obstacleRadius, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    // วาดผู้เล่น
+    players.forEach((player, index) => {
+        const x = centerX + (player.x * gridSize);
+        const y = centerY - (player.y * gridSize);
+        
+        // วาดวงกลมผู้เล่น
+        ctx.beginPath();
+        ctx.fillStyle = player.color;
+        ctx.arc(x, y, 10, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // วาดหมายเลขผู้เล่น
+        ctx.fillStyle = 'white';
+        ctx.fillText((index + 1).toString(), x, y);
+        
+        // วาดกากบาทถ้า HP หมด
+        if (player.hp <= 0) {
+            drawX(player.x, player.y, '#FF0000');
+        }
+    });
+
+    // วาดบอท
+    if (bot) {
+        const botX = centerX + (bot.x * gridSize);
+        const botY = centerY - (bot.y * gridSize);
+        
+        ctx.beginPath();
+        ctx.fillStyle = bot.color;
+        ctx.arc(botX, botY, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'white';
+        ctx.fillText('B', botX, botY);
+        
+        // วาดกากบาทถ้า HP หมด
+        if (bot.hp <= 0) {
+            drawX(bot.x, bot.y, '#FF0000');
+        }
+    }
+}
+
+function easeInOutQuad(t) {
+    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+}
+
+async function animateShot(startX, startY, endX, endY) {
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+
+    const startPosX = centerX + (startX * gridSize);
+    const startPosY = centerY - (startY * gridSize);
+    const endPosX = centerX + (endX * gridSize);
+    const endPosY = centerY - (endY * gridSize);
+
+    const projectile = document.createElement('div');
+    projectile.className = 'projectile';
+    document.querySelector('.game-container').appendChild(projectile);
+
+    const lineElement = document.createElement('div');
+    lineElement.className = 'shot-line';
+    document.querySelector('.game-container').appendChild(lineElement);
+
+    return new Promise(resolve => {
+        let startTime = null;
+        
+        function animate(currentTime) {
+            if (!startTime) startTime = currentTime;
+            const progress = (currentTime - startTime) / ANIMATION_DURATION;
+            
+            if (progress < 1) {
+                const eased = easeInOutQuad(progress);
+                const currentX = startPosX + (endPosX - startPosX) * eased;
+                const currentY = startPosY + (endPosY - startPosY) * eased;
+                
+                projectile.style.left = `${currentX}px`;
+                projectile.style.top = `${currentY}px`;
+                
+                const lineLength = Math.hypot(currentX - startPosX, currentY - startPosY);
+                const angle = Math.atan2(currentY - startPosY, currentX - startPosX);
+                lineElement.style.width = `${lineLength}px`;
+                lineElement.style.left = `${startPosX}px`;
+                lineElement.style.top = `${startPosY}px`;
+                lineElement.style.transform = `rotate(${angle}rad)`;
+                
+                requestAnimationFrame(animate);
+            } else {
+                createExplosion(endPosX, endPosY);
+                projectile.remove();
+                lineElement.remove();
+                resolve();
+            }
+        }
+        
+        requestAnimationFrame(animate);
+    });
+}
+
+function drawX(x, y, color) {
+    const centerX = canvas.width / 2 + (x * gridSize);
+    const centerY = canvas.height / 2 - (y * gridSize);
+    const size = 15; // ขนาดของกากบาท
+
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    
+    // วาดเส้นแรก (\)
+    ctx.moveTo(centerX - size, centerY - size);
+    ctx.lineTo(centerX + size, centerY + size);
+    
+    // วาดเส้นที่สอง (/)
+    ctx.moveTo(centerX + size, centerY - size);
+    ctx.lineTo(centerX - size, centerY + size);
+    
+    ctx.stroke();
+}
+
+function createExplosion(x, y) {
+    const explosion = document.createElement('div');
+    explosion.className = 'explosion';
+    explosion.style.left = `${x}px`;
+    explosion.style.top = `${y}px`;
+    document.querySelector('.game-container').appendChild(explosion);
+
+    // เพิ่ม particle effects
+    for (let i = 0; i < 8; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'explosion-particle';
+        const angle = (i * Math.PI * 2) / 8;
+        const distance = 30;
+        
+        // คำนวณการเคลื่อนที่ของ particle
+        const tx = Math.cos(angle) * distance;
+        const ty = Math.sin(angle) * distance;
+        
+        particle.style.setProperty('--tx', `${tx}px`);
+        particle.style.setProperty('--ty', `${ty}px`);
+        particle.style.left = `${x}px`;
+        particle.style.top = `${y}px`;
+        
+        document.querySelector('.game-container').appendChild(particle);
+        setTimeout(() => particle.remove(), 500);
+    }
+
+    setTimeout(() => explosion.remove(), 500);
+}
+
+function lineIntersectsCircle(x1, y1, x2, y2, cx, cy, r) {
+    // คำนวณเวกเตอร์ทิศทางของเส้น
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const lineLength = Math.sqrt(dx * dx + dy * dy);
+    
+    if (lineLength === 0) return false;
+    
+    // คำนวณจุดที่ใกล้ที่สุดบนเส้น
+    const u = ((cx - x1) * dx + (cy - y1) * dy) / (lineLength * lineLength);
+    const closestX = u < 0 ? x1 : u > 1 ? x2 : x1 + u * dx;
+    const closestY = u < 0 ? y1 : u > 1 ? y2 : y1 + u * dy;
+    
+    // คำนวณระยะทางจากจุดที่ใกล้ที่สุดถึงจุดศูนย์กลางวงกลม
+    const distanceX = closestX - cx;
+    const distanceY = closestY - cy;
+    const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+    
+    return distance <= r;
+}
+
+async function animateShot(startX, startY, endX, endY) {
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+
+    const startPosX = centerX + (startX * gridSize);
+    const startPosY = centerY - (startY * gridSize);
+    const endPosX = centerX + (endX * gridSize);
+    const endPosY = centerY - (endY * gridSize);
+
+    // เพิ่มอนิเมชันที่จุดเริ่มต้น
+    const point1Marker = document.createElement('div');
+    point1Marker.className = 'point-marker';
+    point1Marker.style.left = `${startPosX - 5}px`;
+    point1Marker.style.top = `${startPosY - 5}px`;
+    document.querySelector('.game-container').appendChild(point1Marker);
+
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    const projectile = document.createElement('div');
+    projectile.className = 'projectile';
+    document.querySelector('.game-container').appendChild(projectile);
+
+    const lineElement = document.createElement('div');
+    lineElement.className = 'shot-line';
+    document.querySelector('.game-container').appendChild(lineElement);
+
+    return new Promise(resolve => {
+        let startTime = null;
+        
+        function animate(currentTime) {
+            if (!startTime) startTime = currentTime;
+            const progress = (currentTime - startTime) / ANIMATION_DURATION;
+            
+            if (progress < 1) {
+                const eased = easeInOutQuad(progress);
+                const currentX = startPosX + (endPosX - startPosX) * eased;
+                const currentY = startPosY + (endPosY - startPosY) * eased;
+                
+                projectile.style.left = `${currentX}px`;
+                projectile.style.top = `${currentY}px`;
+                
+                const lineLength = Math.hypot(currentX - startPosX, currentY - startPosY);
+                const angle = Math.atan2(currentY - startPosY, currentX - startPosX);
+                
+                lineElement.style.width = `${lineLength}px`;
+                lineElement.style.left = `${startPosX}px`;
+                lineElement.style.top = `${startPosY}px`;
+                lineElement.style.transform = `rotate(${angle}rad)`;
+                
+                requestAnimationFrame(animate);
+            } else {
+                createExplosion(endPosX, endPosY);
+                projectile.remove();
+                lineElement.remove();
+                point1Marker.remove();
+                resolve();
+            }
+        }
+        
+        requestAnimationFrame(animate);
+    });
+}
+
+async function shoot() {
+    if (isBotTurn || isAnimating) return;
+
+    if (players[currentPlayer].hp <= 0) {
+        alert('This player is defeated and cannot shoot!');
+        nextTurn();
+        return;
+    }
+
+    const x1 = parseInt(document.getElementById('x1Coord').value);
+    const y1 = parseInt(document.getElementById('y1Coord').value);
+    const x2 = parseInt(document.getElementById('x2Coord').value);
+    const y2 = parseInt(document.getElementById('y2Coord').value);
+
+    if (isNaN(x1) || isNaN(y1) || isNaN(x2) || isNaN(y2)) {
+        alert('Please enter valid coordinates');
+        return;
+    }
+
+    if (Math.abs(x1) > 5 || Math.abs(y1) > 5 || Math.abs(x2) > 5 || Math.abs(y2) > 5) {
+        alert('Coordinates must be between -5 and 5');
+        return;
+    }
+
+    if (x1 === x2 && y1 === y2) {
+        alert('First point and second point cannot be the same!');
+        return;
+    }
+
+    const currentPlayerObj = players[currentPlayer];
+
+    const distanceToFirstPoint = Math.sqrt(
+        Math.pow(currentPlayerObj.x - x1, 2) + 
+        Math.pow(currentPlayerObj.y - y1, 2)
+    );
+    
+    if (distanceToFirstPoint > 3) {
+        alert('First point is too far from your position! Maximum range is 3 units.');
+        return;
+    }
+
+    isAnimating = true;
+
+    try {
+        let allCollisions = [];
+        let hitObstacle = false;
+        let hitPoint = null;
+        
+        obstacles.forEach(obs => {
+            if (lineIntersectsCircle(
+                currentPlayerObj.x, currentPlayerObj.y,
+                x1, y1,
+                obs.x, obs.y,
+                obstacleRadius / gridSize
+            )) {
+                hitObstacle = true;
+                hitPoint = calculateIntersectionPoint(
+                    currentPlayerObj.x, currentPlayerObj.y,
+                    x1, y1,
+                    obs.x, obs.y,
+                    obstacleRadius / gridSize
+                );
+            }
+        });
+
+        const firstShotTargets = checkCollisionsWithoutDamage(
+            currentPlayerObj.x, currentPlayerObj.y,
+            hitObstacle ? hitPoint.x : x1,
+            hitObstacle ? hitPoint.y : y1
+        );
+        allCollisions = [...allCollisions, ...firstShotTargets];
+
+        await animateShot(currentPlayerObj.x, currentPlayerObj.y, hitObstacle ? hitPoint.x : x1, hitObstacle ? hitPoint.y : y1);
+        
+        if (hitObstacle) {
+            createExplosionEffect(hitPoint.x, hitPoint.y);
+        } else {
+            hitObstacle = false;
+            hitPoint = null;
+            
+            obstacles.forEach(obs => {
+                if (lineIntersectsCircle(
+                    x1, y1,
+                    x2, y2,
+                    obs.x, obs.y,
+                    obstacleRadius / gridSize
+                )) {
+                    hitObstacle = true;
+                    hitPoint = calculateIntersectionPoint(
+                        x1, y1,
+                        x2, y2,
+                        obs.x, obs.y,
+                        obstacleRadius / gridSize
+                    );
+                }
+            });
+
+            const secondShotTargets = checkCollisionsWithoutDamage(
+                x1, y1,
+                hitObstacle ? hitPoint.x : x2,
+                hitObstacle ? hitPoint.y : y2
+            );
+            allCollisions = [...allCollisions, ...secondShotTargets];
+
+            await animateShot(x1, y1, hitObstacle ? hitPoint.x : x2, hitObstacle ? hitPoint.y : y2);
+            
+            if (hitObstacle) {
+                createExplosionEffect(hitPoint.x, hitPoint.y);
+            }
+        }
+
+        // Apply damage and check for hits
+        if (allCollisions.length > 0) {
+            applyDamageToTargets(allCollisions);
+        }
+
+        // Check win conditions
+        if (players.every(p => p.hp <= 0)) {
+            setTimeout(() => {
+                alert('Bot wins!');
+                initGame();
+            }, 500);
+            return;
+        }
+
+        if (bot.hp <= 0) {
+            setTimeout(() => {
+                alert('Players win!');
+                initGame();
+            }, 500);
+            return;
+        }
+
+        nextTurn();
+    } catch (error) {
+        console.error('Error during shot:', error);
+    } finally {
+        isAnimating = false;
+    }
+}
+
+function randomizeAllPositions() {
+    // สุ่มตำแหน่งผู้เล่นที่ยังมี HP เหลือ
+    players.forEach(player => {
+        if (player.hp > 0) {
+            let newPos;
+            do {
+                newPos = {
+                    x: Math.floor(Math.random() * 7) - 3,
+                    y: Math.floor(Math.random() * 7) - 3
+                };
+            } while (isPositionOccupied(newPos));
+            player.x = newPos.x;
+            player.y = newPos.y;
+        }
+    });
+
+    // สุ่มตำแหน่งบอทถ้ายังมี HP เหลือ
+    if (bot && bot.hp > 0) {
+        let newPos;
+        do {
+            newPos = {
+                x: Math.floor(Math.random() * 7) - 1,
+                y: Math.floor(Math.random() * 11) - 5
+            };
+        } while (isPositionOccupied(newPos));
+        bot.x = newPos.x;
+        bot.y = newPos.y;
+    }
+
+    // สุ่มตำแหน่งสิ่งกีดขวาง
+    obstacles = [];
+    for (let i = 0; i < OBSTACLE_COUNT; i++) {
+        let pos;
+        do {
+            pos = {
+                x: Math.floor(Math.random() * 7) - 1,
+                y: Math.floor(Math.random() * 11) - 5
+            };
+        } while (isPositionOccupied(pos));
+        
+        obstacles.push({
+            ...pos,
+            radius: obstacleRadius
+        });
+    }
+
+    drawGame();
+}
+
+function checkCollisionsWithoutDamage(startX, startY, endX, endY) {
+    const targets = [];
+    
+    // เช็คเฉพาะ bot เท่านั้นถ้าผู้เล่นเป็นคนยิง
+    if (!isBotTurn && bot && bot.hp > 0) {
+        const isOnPath = lineIntersectsPoint(
+            startX, startY,
+            endX, endY,
+            bot.x, bot.y
+        );
+        
+        if (isOnPath) {
+            targets.push(bot);
+        }
+    }
+    // เช็คเฉพาะผู้เล่นถ้า bot เป็นคนยิง
+    else if (isBotTurn) {
+        players.forEach(player => {
+            if (player && player.hp > 0) {
+                const isOnPath = lineIntersectsPoint(
+                    startX, startY,
+                    endX, endY,
+                    player.x, player.y
+                );
+                
+                if (isOnPath) {
+                    targets.push(player);
+                }
+            }
+        });
+    }
+    
+    return targets;
+}
+
+function applyDamageToTargets(targets) {
+    const uniqueTargets = [...new Set(targets)]; // Remove duplicates
+    
+    uniqueTargets.forEach(target => {
+        if (target && target.hp > 0) {
+            target.hp--;
+            
+            if (target === bot) {
+                const healthPercentage = (target.hp / 9) * 100;
+                document.querySelector('#bot .health-bar').style.width = `${healthPercentage}%`;
+                if (target.hp <= 0) {
+                    drawX(target.x, target.y, '#FF0000');
+                }
+            } else {
+                const playerIndex = players.indexOf(target);
+                const healthPercentage = (target.hp / 3) * 100;
+                document.querySelector(`#player${playerIndex + 1} .health-bar`).style.width = `${healthPercentage}%`;
+                if (target.hp <= 0) {
+                    drawX(target.x, target.y, '#FF0000');
+                }
+            }
+        }
+    });
+    // Single randomization after damage is applied
+    randomizeAllPositions();
+}
+
+function calculateIntersectionPoint(x1, y1, x2, y2, cx, cy, r) {
+    // This is a simplified version - you might want to implement a more accurate calculation
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    const unitX = dx / len;
+    const unitY = dy / len;
+    
+    // Calculate distance from start point to obstacle center
+    const distToCenter = Math.sqrt(
+        Math.pow(cx - x1, 2) + Math.pow(cy - y1, 2)
+    );
+    
+    // Calculate intersection point slightly before the obstacle
+    const intersectDist = distToCenter - r - 0.1; // Subtract a small value to stop before the obstacle
+    
+    return {
+        x: x1 + unitX * intersectDist,
+        y: y1 + unitY * intersectDist
+    };
+}
+
+function createExplosionEffect(x, y) {
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Create explosion animation
+    const radius = obstacleRadius / gridSize / 2;
+    ctx.fillStyle = '#ff4444';
+    ctx.beginPath();
+    ctx.arc(
+        (x + 5) * gridSize, 
+        (5 - y) * gridSize, 
+        radius * gridSize, 
+        0, 
+        Math.PI * 2
+    );
+    ctx.fill();
+    
+    // Fade out effect
+    setTimeout(() => drawGame(), 200);
+}
+
+
+// เพิ่ม CSS สำหรับ point-marker
+const style = document.createElement('style');
+style.textContent = `
+    .projectile {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        background-color: #ff4444;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 2;
+    }
+
+    .shot-line {
+        position: absolute;
+        height: 2px;
+        background-color: #ff4444;
+        transform-origin: left center;
+        z-index: 1;
+    }
+
+    .explosion {
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        background: radial-gradient(circle, #ff4444 0%, transparent 70%);
+        transform: translate(-50%, -50%);
+        animation: explode 0.5s ease-out forwards;
+        z-index: 3;
+    }
+
+    .explosion-particle {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background-color: #ff4444;
+        border-radius: 50%;
+        transform-origin: center;
+        animation: particle 0.5s ease-out forwards;
+    }
+
+    @keyframes explode {
+        0% {
+            transform: translate(-50%, -50%) scale(0);
+            opacity: 1;
+        }
+        100% {
+            transform: translate(-50%, -50%) scale(2);
+            opacity: 0;
+        }
+    }
+
+    @keyframes particle {
+        0% {
+            transform: translateX(0) translateY(0);
+            opacity: 1;
+        }
+        100% {
+            transform: translateX(var(--tx)) translateY(var(--ty));
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
+
+// สมมติว่า `players` เป็นอาเรย์ที่มีข้อมูลเกี่ยวกับผู้เล่น รวมถึง `canShoot`
+players = [
+    { hp: 1, canShoot: true }, // ผู้เล่น 1
+    { hp: 1, canShoot: true }  // ผู้เล่น 2
+];
+
+// 1. ลบการประกาศ isAnimating ที่ซ้ำซ้อน (เก็บไว้แค่ในตัวแปรหลักตอนต้น)
+
+function nextTurn() {
+    // ตรวจสอบเงื่อนไขการชนะก่อน
+    if (bot.hp <= 0) {
+        setTimeout(() => {
+            alert('Players win!');
+            initGame();
+        }, 500);
+        return;
+    }
+    if (players.every(p => p.hp <= 0)) {
+        setTimeout(() => {
+            alert('Bot wins!');
+            initGame();
+        }, 500);
+        return;
+    }
+
+    // ถ้าเป็นเทิร์นของบอท
+    if (isBotTurn) {
+        isBotTurn = false;
+        // รีเซ็ตกลับไปที่ผู้เล่นคนแรกที่ยังมีชีวิตอยู่
+        currentPlayer = 0;
+        while (currentPlayer < players.length && players[currentPlayer].hp <= 0) {
+            currentPlayer++;
+        }
+        if (currentPlayer >= players.length) {
+            setTimeout(() => {
+                alert('Bot wins!');
+                initGame();
+            }, 500);
+            return;
+        }
+        updateGameState('player');
+        return;
+    }
+
+    // ถ้าเป็นเทิร์นของผู้เล่น หาผู้เล่นคนถัดไปที่ยังมีชีวิตอยู่
+    let nextPlayer = currentPlayer + 1;
+    while (nextPlayer < players.length && players[nextPlayer].hp <= 0) {
+        nextPlayer++;
+    }
+
+    // ถ้าไม่มีผู้เล่นที่มีชีวิตอยู่แล้ว ให้เป็นเทิร์นของบอท
+    if (nextPlayer >= players.length) {
+        isBotTurn = true;
+        updateGameState('bot');
+        setTimeout(botTurn, 1000);
+    } else {
+        // ถ้ายังมีผู้เล่นที่มีชีวิตอยู่ ให้เปลี่ยนไปที่ผู้เล่นคนนั้น
+        currentPlayer = nextPlayer;
+        updateGameState('player');
+    }
+}
+
+// แก้ไขฟังก์ชัน findNextLivingPlayer ให้ทำงานสอดคล้องกับ nextTurn
+function findNextLivingPlayer(currentPlayerIndex) {
+    // ค้นหาผู้เล่นที่มีชีวิตอยู่คนถัดไป
+    for (let i = currentPlayerIndex + 1; i < players.length; i++) {
+        if (players[i].hp > 0) {
+            return i;
+        }
+    }
+    
+    // ถ้าไม่เจอผู้เล่นที่มีชีวิตอยู่ และต้องการเริ่มใหม่จากคนแรก
+    if (currentPlayerIndex > 0) {
+        for (let i = 0; i < currentPlayerIndex; i++) {
+            if (players[i].hp > 0) {
+                return i;
+            }
+        }
+    }
+    
+    return -1; // ไม่พบผู้เล่นที่มีชีวิตอยู่
+}
+
+
+async function botTurn() {
+    if (!isBotTurn) return;
+    
+    // หาผู้เล่นที่ยังมีชีวิตอยู่
+    const livingPlayers = players.filter(p => p.hp > 0);
+    
+    if (livingPlayers.length === 0) {
+        setTimeout(() => {
+            alert('Bot wins!');
+            initGame();
+        }, 500);
+        return;
+    }
+    
+    // เลือกเป้าหมายจากผู้เล่นที่ยังมีชีวิต
+    let target;
+    
+    // คำนวณระยะห่างจากบอทถึงผู้เล่นแต่ละคน
+    const playersWithDistance = livingPlayers.map(player => ({
+        player: player,
+        distance: Math.sqrt(
+            Math.pow(bot.x - player.x, 2) + 
+            Math.pow(bot.y - player.y, 2)
+        )
+    }));
+
+    // สุ่มว่าจะเลือกโจมตีแบบใด (50% chance แต่ละแบบ)
+    if (Math.random() < 0.5) {
+        // แบบที่ 1: เลือกผู้เล่นที่ใกล้ที่สุด
+        target = playersWithDistance.sort((a, b) => a.distance - b.distance)[0].player;
+    } else {
+        // แบบที่ 2: สุ่มเลือกผู้เล่น
+        target = livingPlayers[Math.floor(Math.random() * livingPlayers.length)];
+    }
+    
+    // คำนวณจุดกึ่งกลางระหว่างบอทและเป้าหมาย
+    const midPoint = {
+        x: bot.x + (target.x - bot.x) * 0.5,
+        y: bot.y + (target.y - bot.y) * 0.5
+    };
+    
+    let hitObstacle = false;
+    let hitPoint = null;
+    let allCollisions = [];
+    
+    // ตรวจสอบการชนกับสิ่งกีดขวางในช่วงแรก
+    obstacles.forEach(obs => {
+        if (lineIntersectsCircle(
+            bot.x, bot.y,
+            midPoint.x, midPoint.y,
+            obs.x, obs.y,
+            obstacleRadius / gridSize
+        )) {
+            hitObstacle = true;
+            hitPoint = calculateIntersectionPoint(
+                bot.x, bot.y,
+                midPoint.x, midPoint.y,
+                obs.x, obs.y,
+                obstacleRadius / gridSize
+            );
+        }
+    });
+    
+    if (hitObstacle && hitPoint) {
+        await animateShot(bot.x, bot.y, hitPoint.x, hitPoint.y);
+        createExplosionEffect(hitPoint.x, hitPoint.y);
+    } else {
+        const firstShotTargets = checkCollisionsWithoutDamage(bot.x, bot.y, midPoint.x, midPoint.y);
+        allCollisions = [...allCollisions, ...firstShotTargets];
+        
+        await animateShot(bot.x, bot.y, midPoint.x, midPoint.y);
+        
+        hitObstacle = false;
+        hitPoint = null;
+        
+        // ตรวจสอบการชนกับสิ่งกีดขวางในช่วงที่สอง
+        obstacles.forEach(obs => {
+            if (lineIntersectsCircle(
+                midPoint.x, midPoint.y,
+                target.x, target.y,
+                obs.x, obs.y,
+                obstacleRadius / gridSize
+            )) {
+                hitObstacle = true;
+                hitPoint = calculateIntersectionPoint(
+                    midPoint.x, midPoint.y,
+                    target.x, target.y,
+                    obs.x, obs.y,
+                    obstacleRadius / gridSize
+                );
+            }
+        });
+        
+        if (hitObstacle && hitPoint) {
+            await animateShot(midPoint.x, midPoint.y, hitPoint.x, hitPoint.y);
+            createExplosionEffect(hitPoint.x, hitPoint.y);
+        } else {
+            const secondShotTargets = checkCollisionsWithoutDamage(midPoint.x, midPoint.y, target.x, target.y);
+            allCollisions = [...allCollisions, ...secondShotTargets];
+            await animateShot(midPoint.x, midPoint.y, target.x, target.y);
+        }
+    }
+
+    // ถ้ามีการยิงโดน ให้สุ่มตำแหน่งใหม่และคิดความเสียหาย
+    if (allCollisions.length > 0) {
+        randomizeAllPositions();
+        applyDamageToTargets(allCollisions);
+    }
+
+    // ตรวจสอบเงื่อนไขการชนะหลังจากบอทยิง
+   if (players.every(p => p.hp <= 0)) {
+        setTimeout(() => {
+            alert('Bot wins!');
+            initGame();
+        }, 500);
+        return;
+    }
+
+    // รีเซ็ตเทิร์นกลับไปที่ผู้เล่นคนแรกที่ยังมีชีวิตอยู่
+    isBotTurn = false;
+    currentPlayer = 0;
+    
+    // หาผู้เล่นคนแรกที่ยังมีชีวิตอยู่
+    while (currentPlayer < players.length && players[currentPlayer].hp <= 0) {
+        currentPlayer++;
+    }
+
+    // ถ้าไม่มีผู้เล่นที่มีชีวิตอยู่เลย
+    if (currentPlayer >= players.length) {
+        setTimeout(() => {
+            alert('Bot wins!');
+            initGame();
+        }, 500);
+        return;
+    }
+
+    updateGameState('player');
+}
+
+// เริ่มเกมเมื่อโหลดหน้าเว็บ
+window.onload = initGame;
+</script>
+
+</body>
+</html>

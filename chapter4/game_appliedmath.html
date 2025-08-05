@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turn-Based Battle Game</title>
+
+</head>
+
+<style>
+/* Base Game Container Styles */
+.game-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background: linear-gradient(145deg, #1a1a1a, #2a2a2a);
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    color: #ffffff;
+}
+
+/* Game Title */
+.game-container h1 {
+    font-size: 2.5em;
+    text-align: center;
+    color: #4CAF50;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Progress Bar */
+.progress-bar {
+    display: flex;
+    justify-content: space-between;
+    margin: 30px 0;
+    padding: 15px;
+    background: rgba(51, 51, 51, 0.8);
+    border-radius: 12px;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.progress-step {
+    flex: 1;
+    text-align: center;
+    padding: 12px;
+    margin: 0 8px;
+    background: rgba(68, 68, 68, 0.8);
+    border-radius: 8px;
+    opacity: 0.7;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: default;
+    font-weight: 600;
+}
+
+.progress-step.active {
+    background: linear-gradient(145deg, #4CAF50, #45a049);
+    opacity: 1;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.progress-step.completed {
+    background: linear-gradient(145deg, #45a049, #388E3C);
+    opacity: 1;
+    position: relative;
+}
+
+.progress-step.completed::after {
+    content: '✓';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #fff;
+    font-weight: bold;
+}
+
+/* Level Styles */
+.level {
+    display: none;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.5s ease-out;
+}
+
+.level.active {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.level h2 {
+    color: #4CAF50;
+    margin: 30px 0;
+    text-align: center;
+    font-size: 1.8em;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Sub Puzzles Grid */
+.sub-puzzles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.sub-puzzle {
+    position: relative;
+    background: rgba(64, 64, 64, 0.8);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease;
+}
+
+.sub-puzzle:hover {
+    transform: translateY(-5px);
+}
+
+.sub-puzzle h3 {
+    color: #4CAF50;
+    margin-bottom: 15px;
+    font-size: 1.3em;
+}
+
+/* Puzzle Elements */
+.puzzle-text {
+    font-size: 1.5em;
+    margin: 20px 0;
+    text-align: center;
+    color: #fff;
+    letter-spacing: 1px;
+}
+
+.puzzle-input {
+    width: calc(100% - 24px); /* Adjust input width to account for padding */
+    padding: 12px;
+    border: 2px solid rgba(76, 175, 80, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1.1em;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+    box-sizing: border-box; /* Ensures padding is included in width calculation */
+}
+
+.puzzle-input:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
+/* Button Styles */
+.submit-btn {
+    width: 100%;
+    padding: 12px 24px;
+    background: linear-gradient(145deg, #4CAF50, #45a049);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 1em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.submit-btn:hover {
+    background: linear-gradient(145deg, #45a049, #388E3C);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+}
+
+.submit-btn:active {
+    transform: translateY(0);
+}
+
+/* Main Puzzle Styles */
+.main-puzzle {
+    display: none;
+    background: linear-gradient(145deg, #404040, #363636);
+    padding: 25px;
+    border-radius: 12px;
+    margin-top: 30px;
+    animation: fadeIn 0.6s ease-out;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Success/Error States */
+.sub-puzzle.solved {
+    background: linear-gradient(145deg, #1b5e20, #2e7d32);
+    transform: scale(1.02);
+}
+
+.error {
+    animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes shake {
+    10%, 90% { transform: translateX(-1px); }
+    20%, 80% { transform: translateX(2px); }
+    30%, 50%, 70% { transform: translateX(-4px); }
+    40%, 60% { transform: translateX(4px); }
+}
+
+/* Discovered Info Section */
+.discovered-info {
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(51, 51, 51, 0.8);
+    border-radius: 12px;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.discovered-info h3 {
+    color: #4CAF50;
+    margin-bottom: 15px;
+}
+
+#infoList {
+    list-style: none;
+    padding: 0;
+}
+
+#infoList li {
+    padding: 10px 15px;
+    margin: 8px 0;
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+#infoList li:hover {
+    background: rgba(76, 175, 80, 0.2);
+    transform: translateX(5px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .game-container {
+        padding: 15px;
+    }
+    
+    .sub-puzzles {
+        grid-template-columns: 1fr;
+    }
+    
+    .progress-step {
+        font-size: 0.9em;
+        padding: 8px;
+    }
+}
+/* Add to existing CSS */
+.progress-step.clickable {
+    cursor: pointer;
+}
+
+.progress-step.special {
+    background: linear-gradient(145deg, #2196F3, #1976D2);
+}
+
+.stats-section {
+    background: rgba(64, 64, 64, 0.8);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.chart-select {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.9); /* เพิ่มความทึบของพื้นหลัง */
+    border: 2px solid rgba(76, 175, 80, 0.3);
+    border-radius: 8px;
+    color: #000; /* เปลี่ยนสีตัวอักษรของ select เป็นสีดำ */
+    font-size: 1em;
+}
+.chart-select option {
+    background: #ffffff;
+    color: #000000;
+    padding: 12px;
+    font-size: 1em;
+}
+
+/* ปรับสไตล์เมื่อ hover และ focus */
+.chart-select:hover, 
+.chart-select:focus {
+    border-color: #4CAF50;
+    outline: none;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
+.location-inputs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.location-group {
+    background: rgba(51, 51, 51, 0.8);
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.location-group h4 {
+    color: #4CAF50;
+    margin-bottom: 10px;
+}
+
+.location-group input {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    border-radius: 4px;
+    color: #fff;
+}
+
+.chart-container {
+    height: 400px;
+    background: rgba(51, 51, 51, 0.8);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.main-puzzle-info {
+    background: linear-gradient(145deg, #4CAF50, #45a049);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+/* Main Layout Container */
+.main-container {
+    display: grid;
+    grid-template-columns: 300px 1fr; /* 300px สำหรับกติกา, ที่เหลือสำหรับเกม */
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Game Rules Panel Styles */
+.game-rules {
+    background: linear-gradient(145deg, #2c2c2c, #333333);
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    height: fit-content;
+    position: sticky;
+    top: 20px; /* ให้กติกาเลื่อนตามการ scroll */
+}
+
+.game-rules h2 {
+    color: #4CAF50;
+    font-size: 1.5em;
+    margin-bottom: 20px;
+    text-align: center;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.game-rules ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.game-rules li {
+    position: relative;
+    padding: 12px 0 12px 30px;
+    color: #ffffff;
+    font-size: 1.1em;
+    line-height: 1.5;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.game-rules li:last-child {
+    border-bottom: none;
+}
+
+.game-rules li:before {
+    content: "•";
+    color: #4CAF50;
+    font-size: 1.5em;
+    position: absolute;
+    left: 10px;
+    top: 8px;
+}
+
+/* Existing Game Container Styles - ปรับขนาดให้เหมาะสมกับ layout ใหม่ */
+.game-container {
+    max-width: none; /* ยกเลิก max-width เดิม */
+    margin: 0;
+    background: linear-gradient(145deg, #1a1a1a, #2a2a2a);
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    color: #ffffff;
+}
+
+/* ปรับปรุง Input Styles */
+.puzzle-input {
+    width: calc(100% - 24px);
+    padding: 12px;
+    border: 2px solid rgba(76, 175, 80, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1.1em;
+    margin-bottom: 15px;
+    box-sizing: border-box;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .main-container {
+        grid-template-columns: 250px 1fr; /* ลดขนาดกติกาลงเล็กน้อยบนหน้าจอขนาดกลาง */
+        gap: 15px;
+        padding: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-container {
+        grid-template-columns: 1fr; /* สำหรับมือถือ ให้กติกาอยู่ด้านบน */
+    }
+    
+    .game-rules {
+        position: static; /* ยกเลิก sticky บนมือถือ */
+    }
+    
+    .game-rules h2 {
+        font-size: 1.3em;
+    }
+    
+    .game-rules li {
+        font-size: 1em;
+        padding: 10px 0 10px 25px;
+    }
+}
+</style>
+<body>
+<div class="main-container">
+    <!-- Game Rules Panel -->
+    <div class="game-rules">
+        <h2>กติกา/วิธีการเล่น</h2>
+        <ul>
+            <!-- เพิ่มกติกาของคุณตรงนี้ -->
+            <li>ข้อมูลต้องกรอกเป็นตัวเลขเท่านั้น</li>
+            <li>ต้องแก้ปริศนาย่อย เพื่อให้ได้ 🔍 และ 💫 มาตอบคำถาม</li>
+            <li>หน้าที่ของ 🔍 คือการอธิบายปริศนาสุดท้ายของแต่ละด่าน</li>
+            <li>หน้าที่ของ 💫 คือข้อมูลที่ผู้เล่นต้องวิเคราะห์และและจดจำเพื่อกรอกข้อมูลลงในช่อง สถิติ</li>
+            <!-- เพิ่มกติกาเพิ่มเติมตามต้องการ -->
+        </ul>
+    </div>
+    <!-- Game Container -->
+    <div class="game-container">
+        <h1>ชาวบ้านหายไปไหน?</h1>
+
+        <!-- Progress Indicator -->
+        <div class="progress-bar">
+            <div class="progress-step clickable" data-level="1">ด่าน 1</div>
+            <div class="progress-step clickable" data-level="2">ด่าน 2</div>
+            <div class="progress-step clickable" data-level="3">ด่าน 3</div>
+            <div class="progress-step clickable" data-level="4">ด่าน 4</div>
+            <div class="progress-step special clickable" data-level="stats">สถิติ</div>
+        </div>
+
+
+        <!-- Level 1 -->
+        <div id="level1" class="level active">
+            <h2>ด่านที่ 1: แก้ให้ได้ถ้านายแน่จริง</h2>
+            <div class="sub-puzzles">
+                <div class="sub-puzzle" id="key1">
+                    <h3>ปริศนาที่ย่อยที่1:</h3>
+                    <p class="puzzle-text">2 + _ = √25 - √4</p>
+                    <input type="number" class="puzzle-input" placeholder="รหัสกุญแจ">
+                    <button class="submit-btn" onclick="checkSubPuzzle('key1', 1)">ลองรหัส</button>
+                </div>
+                <div class="sub-puzzle" id="corner1">
+                    <h3>ปริศนาย่อยที่2:</h3>
+                    <p class="puzzle-text">-2x - 8 = -x + 2 </p>
+                    <input type="number" class="puzzle-input" placeholder="รหัสที่มุมห้อง">
+                    <button class="submit-btn" onclick="checkSubPuzzle('corner1', 1)">ตรวจสอบ</button>
+                </div>
+            </div>
+            <div class="main-puzzle" id="mainPuzzle1">
+                <h3>ปริศนาสุดท้าย</h3>
+                <p class="puzzle-text">10V I V 2I </p>
+                <input type="number" class="puzzle-input" id="mainAnswer1">
+                <button class="submit-btn" onclick="checkMainAnswer(1)">ส่งคำตอบ</button>
+            </div>
+        </div>
+
+        <!-- Level 2 -->
+        <div id="level2" class="level">
+            <h2>ด่านที่ 2: เก่งจริงต้องสังเกตุ</h2>
+            <div class="sub-puzzles">
+                <div class="sub-puzzle" id="key2">
+                    <h3>ปริศนาย่อยที่1:</h3>
+                    <p class="puzzle-text">Sept Aug Apr Feb</p>
+                    <input type="number" class="puzzle-input" placeholder="รหัสกุญแจ">
+                    <button class="submit-btn" onclick="checkSubPuzzle('key2', 2)">ลองรหัส</button>
+                </div>
+                <div class="sub-puzzle" id="corner2">
+                    <h3>ปริศนาย่อยที่2:</h3>
+                    <p class="puzzle-text">⬢ ■ ● ◢</p>
+                    <input type="number" class="puzzle-input" placeholder="รหัสที่มุมห้อง">
+                    <button class="submit-btn" onclick="checkSubPuzzle('corner2', 2)">ตรวจสอบ</button>
+                </div>
+            </div>
+            <div class="main-puzzle" id="mainPuzzle2">
+                <h3>ปริศนาสุดท้าย</h3>
+                <p class="puzzle-text">⠁⠑⠃⠚⠙⠃</p>
+                <input type="number" class="puzzle-input" id="mainAnswer2">
+                <button class="submit-btn" onclick="checkMainAnswer(2)">ส่งคำตอบ</button>
+            </div>
+        </div>
+
+        <!-- Level 3 -->
+        <div id="level3" class="level">
+            <h2>ด่านที่ 3: สมการรูปแบบใหม่</h2>
+            <div class="sub-puzzles">
+                <div class="sub-puzzle" id="key3">
+                    <h3>ปริศนาย่อยที่1:</h3>
+                    <p class="puzzle-text">🌞+🌞+🌞=15</p> <!-- 🌞 = 5 -->
+                    <p class="puzzle-text">(🌞x🍓)+🍓=36</p> <!-- 🍓 = 6 -->
+                    <p class="puzzle-text">(🍓÷⭐)+🌞=7</p> <!-- ⭐ = 3 -->
+                    <p class="puzzle-text">⭐+🌞+🍓= ?</p>
+                    <input type="number" class="puzzle-input" placeholder="รหัสกุญแจ">
+                    <button class="submit-btn" onclick="checkSubPuzzle('key3', 3)">ลองรหัส</button>
+                </div>
+                <div class="sub-puzzle" id="corner3">
+                    <h3>ปริศนาย่อยที่2:</h3>
+                    <p class="puzzle-text">8,2 = 26</p>
+                    <p class="puzzle-text">5,2 = 17</p>
+                    <p class="puzzle-text">8,0 = 8</p>
+                    <p class="puzzle-text">12,24 = ?</p>
+                    <input type="number" class="puzzle-input" placeholder="รหัสที่มุมห้อง">
+                    <button class="submit-btn" onclick="checkSubPuzzle('corner3', 3)">ตรวจสอบ</button>
+                </div>
+            </div>
+            <div class="main-puzzle" id="mainPuzzle3">
+                <h3>ปริศนาสุดท้าย</h3>
+                <p class="puzzle-text">12 = 50</p>
+                <p class="puzzle-text">4 = 18</p>
+                <p class="puzzle-text">25 = 102</p>
+                <p class="puzzle-text">1 = ?</p>
+                <input type="number" class="puzzle-input" id="mainAnswer3">
+                <button class="submit-btn" onclick="checkMainAnswer(3)">ส่งคำตอบ</button>
+            </div>
+        </div>
+
+        <!-- Level 4 -->
+        <div id="level4" class="level">
+            <h2>ด่านที่ 4: ตัวเลขซ่อนเงื่อน</h2>
+            <div class="sub-puzzles">
+                <div class="sub-puzzle" id="key4">
+                    <h3>ปริศนาย่อยที่1:</h3>
+                    <p class="puzzle-text">2 _ 5 _ 11 _ 17 </p>
+                    <input type="number" class="puzzle-input" placeholder="รหัสกุญแจ">
+                    <button class="submit-btn" onclick="checkSubPuzzle('key4', 4)">ลองรหัส</button>
+                </div>
+                <div class="sub-puzzle" id="corner4">
+                    <h3>ปริศนาย่อยที่2:</h3>
+                    <p class="puzzle-text">a = 1, z = 26</p>
+                    <p class="puzzle-text">e,a,s,y = ?</p>
+                    <input type="number" class="puzzle-input" placeholder="รหัสที่มุมห้อง">
+                    <button class="submit-btn" onclick="checkSubPuzzle('corner4', 4)">ตรวจสอบ</button>
+                </div>
+            </div>
+            <div class="main-puzzle" id="mainPuzzle4">
+                <h3>ปริศนาสุดท้าย</h3>
+                <p class="puzzle-text">6.2831_ _ _</p>
+                <input type="number" class="puzzle-input" id="mainAnswer4">
+                <button class="submit-btn" onclick="checkMainAnswer(4)">ส่งคำตอบ</button>
+            </div>
+        </div>
+        <div id="statsLevel" class="level">
+            <h2>การวิเคราะห์ข้อมูลสถิติ</h2>
+            <div class="stats-section">
+                <h3>เลือกประเภทแผนภูมิ:</h3>
+                <select id="chartType" class="chart-select">
+                    <option value="">-- เลือกประเภทแผนภูมิ --</option>
+                    <option value="bar">แผนภูมิแท่ง</option>
+                    <option value="line">แผนภูมิเส้น</option>
+                    <option value="candlestick">แผนภูมิวงกลม</option>
+                </select>
+
+                <div class="data-input-section">
+                    <h3>กรอกข้อมูลตามสถานที่:</h3>
+                    <div class="location-inputs">
+                        <div class="location-group">
+                            <h4>ต่างประเทศ</h4>
+                            <input type="number" id="abroadMale" placeholder="จำนวนผู้ชาย">
+                            <input type="number" id="abroadFemale" placeholder="จำนวนผู้หญิง">
+                        </div>
+                        <div class="location-group">
+                            <h4>วัด</h4>
+                            <input type="number" id="templeMale" placeholder="จำนวนผู้ชาย">
+                            <input type="number" id="templeFemale" placeholder="จำนวนผู้หญิง">
+                        </div>
+                        <div class="location-group">
+                            <h4>กรุงเทพ</h4>
+                            <input type="number" id="bangkokMale" placeholder="จำนวนผู้ชาย">
+                            <input type="number" id="bangkokFemale" placeholder="จำนวนผู้หญิง">
+                        </div>
+                    </div>
+                    <button id="submitStats" class="submit-btn">ตรวจสอบข้อมูล</button>
+                </div>
+            </div>
+            <div id="chartContainer" class="chart-container"></div>
+        </div>
+
+        <!-- Modified Results Display -->
+        <div id="discoveredInfo" class="discovered-info">
+            <h3>ข้อมูลที่ค้นพบ:</h3>
+            <div id="mainPuzzleInfo" class="main-puzzle-info"></div>
+            <ul id="infoList"></ul>
+        </div>
+    </div>
+</div>
+<script>
+
+const gameData = {
+    currentLevel: 1,
+    discoveredInfo: [],
+    subPuzzles: {
+        level1: { key1: false, corner1: false },
+        level2: { key2: false, corner2: false },
+        level3: { key3: false, corner3: false },
+        level4: { key4: false, corner4: false }
+    }
+};
+
+// Puzzle Data
+const levelClues = {
+    1: {
+        key1: {
+            puzzle: "2 + _ = √25 - √4",
+            answer: 1,
+            reward: "ไม่ใช่ตัวอักษร"
+        },
+        corner1: {
+            puzzle: "-2x - 8 = -x + 2",
+            answer: -10,
+            reward: "ตัวเลขในสมัยโบราณ"
+        },
+        hidden: {
+            type: "sequence",
+            pattern: [1, 5, 2, 5, 0],
+            hint: "MDCCL ในระบบโรมัน"
+        }
+    },
+    2: {
+        key2: {
+            puzzle: "Sept Aug Apr Frb",
+            answer: 9842,
+            reward: "อักษรนี้สำหรับผู้พิการด้านการมองเห็น"
+        },
+        corner2: {
+            puzzle: "⬢ ■ ● ◢",
+            answer: 6403,
+            reward: "ไม่ใช่จุด แต่เป็นอักษรพิเศษ"
+        }
+    },
+    3: {
+        key3: {
+            puzzle: "⭐+🌞+🍓= ?",
+            answer: 14,
+            reward: "คูณก่อนแล้วค่อยบวก"
+        },
+        corner3: {
+            puzzle: "12,24 = ?",
+            answer: 324,
+            reward: "จำไม่ได้ว่าต้องบวก2รึเปล่า"
+        }
+    },
+    4: {
+        key4: {
+            puzzle: "2 _ 5 _ 11 _ ",
+            answer: 3713,
+            reward: "ค่าคงที่ของวงกลม"
+        },
+        corner4: {
+            puzzle: "e,a,s,y = ?",
+            answer: 511925,
+            reward: "x+3=5"
+        }
+    }
+};
+
+// Hidden Data
+const hiddenData = {
+    locations: {
+        abroad: {
+            male: 8,
+            female: 6,
+            clue: "ต่างประเทศ = 14 คน"
+        },
+        bangkok: {
+            male: 15,
+            female: 5,
+            clue: "กรุงเทพ = 20 คน "
+        },
+        temple: {
+            male: 12,
+            female: 24,
+            clue: "วัด = 36 คน"
+        }
+    }
+};
+
+// Check Sub Puzzle
+function checkSubPuzzle(puzzleId, level) {
+    const input = document.querySelector(`#${puzzleId} input`);
+    const puzzle = document.getElementById(puzzleId);
+    const correctAnswer = levelClues[level][puzzleId].answer;
+    
+    if (parseInt(input.value) === correctAnswer) {
+        puzzle.classList.add('solved');
+        gameData.subPuzzles[`level${level}`][puzzleId] = true;
+        collectClue(level, puzzleId);
+        checkAllSubPuzzles(level);
+        
+        // Add success animation
+        const animation = document.createElement('div');
+        animation.className = 'success-animation';
+        animation.textContent = '🔍';
+        puzzle.appendChild(animation);
+        
+        // Disable input and button
+        input.disabled = true;
+        puzzle.querySelector('button').disabled = true;
+    } else {
+        puzzle.classList.add('error');
+        setTimeout(() => puzzle.classList.remove('error'), 1000);
+    }
+}
+
+// Collect Clue
+function collectClue(level, puzzleId) {
+    const clue = levelClues[level][puzzleId];
+    if (clue) {
+        gameData.discoveredInfo.push({
+            type: 'clue',
+            level: level,
+            content: clue.reward,
+            timestamp: new Date().getTime()
+        });
+    }
+    
+    // Add hidden info (30% chance)
+    if (Math.random() > 0) {
+        const locations = Object.keys(hiddenData.locations);
+        const randomLocation = locations[Math.floor(Math.random() * locations.length)];
+        gameData.discoveredInfo.push({
+            type: 'hidden',
+            content: hiddenData.locations[randomLocation].clue,
+            timestamp: new Date().getTime()
+        });
+    }
+    
+    updateDiscoveredInfo();
+}
+
+// Update Discovered Info
+function updateDiscoveredInfo() {
+    const infoList = document.getElementById('infoList');
+    const sortedInfo = gameData.discoveredInfo.sort((a, b) => b.timestamp - a.timestamp);
+    
+    infoList.innerHTML = sortedInfo.map(info => {
+        const displayClass = info.type === 'clue' ? 'clue-info' : 'hidden-info';
+        const icon = info.type === 'clue' ? '🔍' : '💫';
+        
+        return `
+            <li class="${displayClass}">
+                ${icon} ${info.content}
+                ${info.type === 'clue' ? `<small>(ด่านที่ ${info.level})</small>` : ''}
+            </li>
+        `;
+    }).join('');
+}
+
+// Check All Sub Puzzles
+function checkAllSubPuzzles(level) {
+    const levelPuzzles = gameData.subPuzzles[`level${level}`];
+    const allSolved = Object.values(levelPuzzles).every(solved => solved);
+    
+    if (allSolved) {
+        const mainPuzzle = document.getElementById(`mainPuzzle${level}`);
+        mainPuzzle.style.display = 'block';
+        
+        // เพิ่มข้อมูลที่ค้นพบ
+        gameData.discoveredInfo.push({
+            type: 'hidden',
+            content: `เปิดปริศนาสุดท้ายของด่านที่ ${level} แล้ว! 🔓`,
+            timestamp: new Date().getTime()
+        });
+        updateDiscoveredInfo();
+        
+        // ทำเครื่องหมาย Progress Step
+        document.querySelector(`.progress-step[data-level="${level}"]`).classList.add('completed');
+        if (level < 4) {
+            document.querySelector(`.progress-step[data-level="${level + 1}"]`).classList.add('active');
+        }
+    }
+}
+
+
+function showFinalAnalysis() {
+    const gameContainer = document.querySelector('.game-container');
+    const totalTime = Math.floor((new Date().getTime() - gameData.startTime) / 1000); // เวลาทั้งหมดเป็นวินาที
+    const hours = Math.floor(totalTime / 3600);
+    const minutes = Math.floor((totalTime % 3600) / 60);
+    const seconds = totalTime % 60;
+
+    // สร้าง timeline ของการค้นพบข้อมูล
+    const timeline = gameData.discoveredInfo
+        .map(info => {
+            const time = new Date(info.timestamp).toLocaleTimeString();
+            return `<li class="timeline-item ${info.type}">
+                <span class="time">${time}</span>
+                <span class="content">${info.content}</span>
+            </li>`;
+        })
+        .join('');
+
+    gameContainer.innerHTML = `
+        <div class="final-analysis">
+            <h2>🎊 ยินดีด้วย! คุณได้ไขปริศนาทั้งหมดแล้ว! 🎊</h2>
+            
+            <div class="analysis-section">
+                <h3>📊 สรุปผลการเล่น</h3>
+                <ul>
+                    <li>เวลาที่ใช้: ${hours}ชั่วโมง ${minutes}นาที ${seconds}วินาที</li>
+                    <li>จำนวนคำใบ้ที่ค้นพบ: ${gameData.discoveredInfo.filter(info => info.type === 'clue').length} ชิ้น</li>
+                    <li>จำนวนข้อมูลซ่อนเร้นที่พบ: ${gameData.discoveredInfo.filter(info => info.type === 'hidden').length} ชิ้น</li>
+                </ul>
+            </div>
+
+            <div class="analysis-section">
+                <h3>🔍 บทสรุปปริศนา</h3>
+                <ol>
+                    <li>ด่านที่ 1: เลขโรมัน MDCCL = 1750</li>
+                    <li>ด่านที่ 2: การรวมเดือน = 23</li>
+                    <li>ด่านที่ 3: ค่าของดาว ⭐ = 3</li>
+                    <li>ด่านที่ 4: จำนวนชายที่หายไป = 35 คน</li>
+                </ol>
+            </div>
+
+            <div class="analysis-section">
+                <h3>⏳ Timeline การค้นพบ</h3>
+                <ul class="timeline">
+                    ${timeline}
+                </ul>
+            </div>
+
+            <div class="final-buttons">
+                <button onclick="restartGame()" class="restart-btn">เล่นใหม่</button>
+                <button onclick="shareResults()" class="share-btn">แชร์ผลการเล่น</button>
+            </div>
+        </div>
+    `;
+}
+
+// ฟังก์ชันรีสตาร์ทเกม
+function restartGame() {
+    gameData = {
+        currentLevel: 1,
+        startTime: new Date().getTime(),
+        discoveredInfo: [],
+        subPuzzles: {
+            level1: { puzzle1: false, puzzle2: false },
+            level2: { puzzle1: false, puzzle2: false },
+            level3: { puzzle1: false, puzzle2: false },
+            level4: { puzzle1: false, puzzle2: false }
+        }
+    };
+    
+    // รีเซ็ตการแสดงผลทั้งหมด
+    const levels = document.querySelectorAll('.level');
+    levels.forEach(level => level.classList.remove('active'));
+    document.getElementById('level1').classList.add('active');
+    
+    // รีเซ็ต progress steps
+    const steps = document.querySelectorAll('.progress-step');
+    steps.forEach(step => {
+        step.classList.remove('active', 'completed');
+    });
+    document.querySelector('.progress-step[data-level="1"]').classList.add('active');
+    
+    updateDiscoveredInfo();
+}
+
+// ฟังก์ชันแชร์ผลการเล่น
+function shareResults() {
+    const totalTime = Math.floor((new Date().getTime() - gameData.startTime) / 1000);
+    const hours = Math.floor(totalTime / 3600);
+    const minutes = Math.floor((totalTime % 3600) / 60);
+    const seconds = totalTime % 60;
+    
+    const shareText = `
+🔍 ฉันเพิ่งไขปริศนาทั้ง 4 ด่านสำเร็จ!
+⏱️ เวลาที่ใช้: ${hours}ชม ${minutes}นาที ${seconds}วินาที
+🏆 ค้นพบคำใบ้: ${gameData.discoveredInfo.filter(info => info.type === 'clue').length} ชิ้น
+🎯 พบข้อมูลลับ: ${gameData.discoveredInfo.filter(info => info.type === 'hidden').length} ชิ้น
+
+มาลองเล่นกันเถอะ! #PuzzleGame`;
+
+    // สร้าง dummy element สำหรับคัดลอกข้อความ
+    const dummy = document.createElement('textarea');
+    document.body.appendChild(dummy);
+    dummy.value = shareText;
+    dummy.select();
+    document.execCommand('copy');
+    document.body.removeChild(dummy);
+    
+    alert('คัดลอกผลการเล่นไปยังคลิปบอร์ดแล้ว! พร้อมแชร์ได้เลย 🎉');
+} // a
+
+const chartUtils = {
+    colors: {
+        male: {
+            primary: '#2563eb',
+            highlight: '#60a5fa',
+            gradient: ['#3b82f6', '#2563eb']
+        },
+        female: {
+            primary: '#db2777',
+            highlight: '#f472b6',
+            gradient: ['#ec4899', '#db2777']
+        },
+        background: '#ffffff',
+        grid: '#e5e7eb',
+        axis: '#1f2937'
+    },
+
+    fonts: {
+        primary: '14px Inter, system-ui, sans-serif',
+        title: 'bold 16px Inter, system-ui, sans-serif',
+        legend: '12px Inter, system-ui, sans-serif'
+    },
+
+    animation: {
+        duration: 1000,
+        easing: t => t<.5 ? 4*t*t*t : (t-1)*(2*t-2)*(2*t-2)+1
+    },
+
+    calculateYScale(data) {
+        const allValues = data.reduce((acc, item) => {
+            acc.push(item.male, item.female);
+            return acc;
+        }, []);
+        const maxValue = Math.max(...allValues);
+        return Math.ceil(maxValue / 5) * 5;
+    },
+
+    drawGrid(ctx, width, height, steps) {
+        ctx.strokeStyle = this.colors.grid;
+        ctx.lineWidth = 0.5;
+        ctx.setLineDash([5, 5]);
+        
+        for (let i = 0; i <= steps; i++) {
+            const y = (height / steps) * i + 40;
+            ctx.beginPath();
+            ctx.moveTo(60, y);
+            ctx.lineTo(width - 20, y);
+            ctx.stroke();
+        }
+        
+        ctx.setLineDash([]);
+    },
+
+    drawAxes(ctx, width, height, maxValue) {
+        ctx.strokeStyle = this.colors.axis;
+        ctx.lineWidth = 2;
+        ctx.font = this.fonts.primary;
+        
+        // Y axis
+        ctx.beginPath();
+        ctx.moveTo(60, 40);
+        ctx.lineTo(60, height + 40);
+        ctx.stroke();
+
+        // X axis
+        ctx.beginPath();
+        ctx.moveTo(60, height + 40);
+        ctx.lineTo(width - 20, height + 40);
+        ctx.stroke();
+
+        // Y axis values
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = this.colors.axis;
+        for (let i = 0; i <= 5; i++) {
+            const value = (maxValue / 5) * (5 - i);
+            const y = (height / 5) * i + 40;
+            ctx.fillText(value.toLocaleString(), 55, y);
+        }
+    },
+
+    createGradient(ctx, x, y, height, colors) {
+        const gradient = ctx.createLinearGradient(x, y, x, y + height);
+        gradient.addColorStop(0, colors[0]);
+        gradient.addColorStop(1, colors[1]);
+        return gradient;
+    }
+};
+
+const chartDrawers = {
+    drawBarChart(ctx, data, width, height) {
+        const maxValue = chartUtils.calculateYScale(data);
+        const barWidth = Math.min(40, (width - 160) / (data.length * 2));
+        let currentAnimation = 0;
+        
+        const drawingHeight = height - 80;
+        const drawingStart = 40;
+        
+        const animate = () => {
+            currentAnimation = Math.min(currentAnimation + 0.05, 1);
+            
+            // Clear entire canvas
+            ctx.fillStyle = chartUtils.colors.background;
+            ctx.fillRect(0, 0, width, height);
+            
+            // Draw grid and axes first
+            chartUtils.drawGrid(ctx, width, drawingHeight, 5);
+            chartUtils.drawAxes(ctx, width, drawingHeight, maxValue);
+            
+            // Draw title
+            ctx.font = chartUtils.fonts.title;
+            ctx.fillStyle = chartUtils.colors.axis;
+            ctx.textAlign = 'center';
+            ctx.fillText('การกระจายตัวของประชากรตามสถานที่', width / 2, 30);
+            
+            data.forEach((item, index) => {
+                const x = 80 + (index * barWidth * 4);
+                
+                // Draw male bar first
+                const maleHeight = (item.male / maxValue) * drawingHeight * 
+                    chartUtils.animation.easing(currentAnimation);
+                const maleY = drawingHeight - maleHeight + drawingStart;
+                    
+                ctx.fillStyle = chartUtils.colors.male.primary;
+                ctx.beginPath();
+                ctx.roundRect(
+                    x,
+                    maleY,
+                    barWidth - 4,
+                    maleHeight,
+                    4
+                );
+                ctx.fill();
+                
+                // Draw female bar
+                const femaleHeight = (item.female / maxValue) * drawingHeight * 
+                    chartUtils.animation.easing(currentAnimation);
+                const femaleY = drawingHeight - femaleHeight + drawingStart;
+                    
+                ctx.fillStyle = chartUtils.colors.female.primary;
+                ctx.beginPath();
+                ctx.roundRect(
+                    x + barWidth,
+                    femaleY,
+                    barWidth - 4,
+                    femaleHeight,
+                    4
+                );
+                ctx.fill();
+
+                // Add value labels without background
+                if (currentAnimation > 0.8) {
+                    ctx.font = chartUtils.fonts.primary;
+                    ctx.fillStyle = chartUtils.colors.axis;
+                    ctx.textAlign = 'center';
+                    
+                    // Male value
+                    const maleLabelY = maleY - 8;
+                    ctx.fillStyle = chartUtils.colors.axis;
+                    ctx.fillText(
+                        item.male.toLocaleString(),
+                        x + (barWidth/2) - 2,
+                        maleLabelY
+                    );
+                    
+                    // Female value
+                    const femaleLabelY = femaleY - 8;
+                    ctx.fillStyle = chartUtils.colors.axis;
+                    ctx.fillText(
+                        item.female.toLocaleString(),
+                        x + barWidth + (barWidth/2) - 2,
+                        femaleLabelY
+                    );
+                }
+
+                // Location label
+                ctx.font = chartUtils.fonts.primary;
+                ctx.fillStyle = chartUtils.colors.axis;
+                ctx.textAlign = 'center';
+                ctx.fillText(
+                    this.formatLocation(item.name),
+                    x + barWidth - 2,
+                    height - 10
+                );
+            });
+
+            this.drawLegend(ctx, width);
+
+            if (currentAnimation < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+
+        animate();
+    },
+
+    drawLineChart(ctx, data, width, height) {
+        const maxValue = chartUtils.calculateYScale(data);
+        const step = (width - 140) / (data.length - 1);
+        let currentAnimation = 0;
+        
+        const animate = () => {
+            currentAnimation = Math.min(currentAnimation + 0.05, 1);
+            
+            ctx.fillStyle = chartUtils.colors.background;
+            ctx.fillRect(0, 0, width, height);
+            
+            const drawingHeight = height - 80;
+            const drawingStart = 40;
+
+            // Draw grid and axes first
+            chartUtils.drawGrid(ctx, width, drawingHeight, 5);
+            chartUtils.drawAxes(ctx, width, drawingHeight, maxValue);
+            
+            // Draw title
+            ctx.font = chartUtils.fonts.title;
+            ctx.fillStyle = chartUtils.colors.axis;
+            ctx.textAlign = 'center';
+            ctx.fillText('แนวโน้มการกระจายตัวของประชากร', width / 2, 30);
+
+            const drawAnimatedLine = (values, color) => {
+                // Draw line
+                ctx.beginPath();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 3;
+                ctx.lineJoin = 'round';
+                
+                values.forEach((value, i) => {
+                    const x = 80 + (i * step);
+                    const animatedValue = value * chartUtils.animation.easing(currentAnimation);
+                    const y = drawingHeight - (animatedValue / maxValue * drawingHeight) + drawingStart;
+                    
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                });
+                
+                ctx.stroke();
+
+                // Draw points and labels
+                values.forEach((value, i) => {
+                    const x = 80 + (i * step);
+                    const animatedValue = value * chartUtils.animation.easing(currentAnimation);
+                    const y = drawingHeight - (animatedValue / maxValue * drawingHeight) + drawingStart;
+                    
+                    // Draw point
+                    ctx.beginPath();
+                    ctx.fillStyle = color;
+                    ctx.arc(x, y, 6, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Add value label without background
+                    if (currentAnimation > 0.8) {
+                        ctx.font = chartUtils.fonts.primary;
+                        ctx.fillStyle = chartUtils.colors.axis;
+                        ctx.textAlign = 'center';
+                        ctx.fillText(value.toLocaleString(), x, y - 15);
+                    }
+                });
+            };
+
+            // Draw male line first, then female line
+            drawAnimatedLine(data.map(d => d.male), chartUtils.colors.male.primary);
+            drawAnimatedLine(data.map(d => d.female), chartUtils.colors.female.primary);
+
+            // Location labels
+            data.forEach((item, i) => {
+                const x = 80 + (i * step);
+                ctx.font = chartUtils.fonts.primary;
+                ctx.fillStyle = chartUtils.colors.axis;
+                ctx.textAlign = 'center';
+                ctx.fillText(this.formatLocation(item.name), x, height - 10);
+            });
+
+            this.drawLegend(ctx, width);
+
+            if (currentAnimation < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+
+        animate();
+    },
+
+    drawLineChart(ctx, data, width, height) {
+        const maxValue = chartUtils.calculateYScale(data);
+        const step = (width - 140) / (data.length - 1);
+        let currentAnimation = 0;
+        
+        const animate = () => {
+            currentAnimation = Math.min(currentAnimation + 0.05, 1);
+            
+            ctx.fillStyle = chartUtils.colors.background;
+            ctx.fillRect(0, 0, width, height);
+            
+            // Draw title
+            ctx.font = chartUtils.fonts.title;
+            ctx.fillStyle = chartUtils.colors.axis;
+            ctx.textAlign = 'center';
+            ctx.fillText('แนวโน้มการกระจายตัวของประชากร', width / 2, 30);
+
+            const drawingHeight = height - 80;
+            const drawingStart = 40;
+
+            chartUtils.drawGrid(ctx, width, drawingHeight, 5);
+            chartUtils.drawAxes(ctx, width, drawingHeight, maxValue);
+
+            const drawAnimatedLine = (values, color) => {
+                // Draw line
+                ctx.beginPath();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 3;
+                ctx.lineJoin = 'round';
+                
+                values.forEach((value, i) => {
+                    const x = 80 + (i * step);
+                    const animatedValue = value * chartUtils.animation.easing(currentAnimation);
+                    const y = drawingHeight - (animatedValue / maxValue * drawingHeight) + drawingStart;
+                    
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                });
+                
+                ctx.stroke();
+
+                // Draw points and labels
+                values.forEach((value, i) => {
+                    const x = 80 + (i * step);
+                    const animatedValue = value * chartUtils.animation.easing(currentAnimation);
+                    const y = drawingHeight - (animatedValue / maxValue * drawingHeight) + drawingStart;
+                    
+                    // Draw point
+                    ctx.beginPath();
+                    ctx.fillStyle = color;
+                    ctx.arc(x, y, 6, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Add value label with background
+                    if (currentAnimation > 0.8) {
+                        const labelY = y - 15;
+                        
+                        // Clear background for label
+                        ctx.fillStyle = chartUtils.colors.background;
+                        ctx.fillRect(x - 20, labelY - 10, 40, 20);
+                        
+                        // Draw label
+                        ctx.font = chartUtils.fonts.primary;
+                        ctx.fillStyle = chartUtils.colors.axis;
+                        ctx.textAlign = 'center';
+                        ctx.fillText(value.toLocaleString(), x, labelY);
+                    }
+                });
+            };
+
+            // Draw male line first, then female line
+            drawAnimatedLine(data.map(d => d.male), chartUtils.colors.male.primary);
+            drawAnimatedLine(data.map(d => d.female), chartUtils.colors.female.primary);
+
+            // Location labels
+            data.forEach((item, i) => {
+                const x = 80 + (i * step);
+                ctx.font = chartUtils.fonts.primary;
+                ctx.fillStyle = chartUtils.colors.axis;
+                ctx.textAlign = 'center';
+                ctx.fillText(this.formatLocation(item.name), x, height - 10);
+            });
+
+            this.drawLegend(ctx, width);
+
+            if (currentAnimation < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+
+        animate();
+    },
+
+    drawLegend(ctx, width) {
+        const legends = [
+            { label: 'ผู้ชาย', color: chartUtils.colors.male.primary },
+            { label: 'ผู้หญิง', color: chartUtils.colors.female.primary }
+        ];
+
+        let x = width - 150;
+        
+        legends.forEach(legend => {
+            // Draw colored rectangle
+            ctx.fillStyle = legend.color;
+            ctx.beginPath();
+            ctx.roundRect(x, 10, 22, 12, 3);
+            ctx.fill();
+            
+            // Draw label
+            ctx.font = chartUtils.fonts.legend;
+            ctx.fillStyle = chartUtils.colors.axis;
+            ctx.textAlign = 'left';
+            ctx.fillText(legend.label, x + 30, 20);
+            
+            x += 70;
+        });
+    },
+
+    formatLocation(name) {
+        const locations = {
+            'abroad': 'ต่างประเทศ',
+            'temple': 'วัด',
+            'bangkok': 'กรุงเทพ'
+        };
+        return locations[name] || name;
+    }
+};
+
+// Check stats data and draw chart
+function checkStatsData() {
+    const correctData = {
+        abroad: { male: 8, female: 6 },
+        temple: { male: 12, female: 24 },
+        bangkok: { male: 15, female: 5 }
+    };
+    
+    const chartType = document.getElementById('chartType').value;
+    const inputData = {
+        abroad: {
+            male: parseInt(document.getElementById('abroadMale').value),
+            female: parseInt(document.getElementById('abroadFemale').value)
+        },
+        temple: {
+            male: parseInt(document.getElementById('templeMale').value),
+            female: parseInt(document.getElementById('templeFemale').value)
+        },
+        bangkok: {
+            male: parseInt(document.getElementById('bangkokMale').value),
+            female: parseInt(document.getElementById('bangkokFemale').value)
+        }
+    };
+    
+    // ตรวจสอบความถูกต้องของข้อมูล
+    let isCorrect = true;
+    for (let location in correctData) {
+        if (inputData[location].male !== correctData[location].male ||
+            inputData[location].female !== correctData[location].female) {
+            isCorrect = false;
+            break;
+        }
+    }
+    
+    if (!chartType) {
+        alert('กรุณาเลือกประเภทแผนภูมิ');
+        return;
+    }
+    
+    if (isCorrect) {
+        // เตรียมข้อมูลสำหรับวาดแผนภูมิ
+        const chartData = Object.keys(inputData).map(location => ({
+            name: location,
+            male: inputData[location].male,
+            female: inputData[location].female,
+            total: inputData[location].male + inputData[location].female
+        }));
+        
+        // สร้าง canvas element
+        const container = document.getElementById('chartContainer');
+        container.innerHTML = '<canvas id="statsChart" width="800" height="400"></canvas>';
+        const canvas = document.getElementById('statsChart');
+        const ctx = canvas.getContext('2d');
+        
+        // วาดแผนภูมิตามประเภทที่เลือก
+        if (chartType === 'bar') {
+            chartDrawers.drawBarChart(ctx, chartData, 800, 350);
+        } else if (chartType === 'line') {
+            chartDrawers.drawLineChart(ctx, chartData, 800, 350);
+        } else if (chartType === 'candlestick') {
+            chartDrawers.drawBarChart(ctx, chartData, 800, 350);
+        }
+        
+        alert('ยินดีด้วย! ข้อมูลถูกต้องทั้งหมด');
+    } else {
+        alert('ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง');
+    }
+}
+
+// เก็บข้อมูลของแต่ละด่านในรูปแบบ Object
+const levelsData = {
+    1: { 
+        answer: 50152, //คำตอบจริง
+        hint: 'ไฟ'      // คำอธิบายหรือคำใบ้
+    },
+    2: { 
+        answer: 152042, 
+        hint: '' 
+    },
+    3: { 
+        answer: 6, 
+        hint: '' 
+    },
+    4: { 
+        answer: 853, 
+        hint: '' 
+    }
+};
+
+// ฟังก์ชันสำหรับตั้งค่าคำตอบและคำใบ้ของแต่ละด่าน
+function setLevelData(level, answer, hint) {
+    if (level >= 1 && level <= 4) {
+        levelsData[level] = { 
+            answer: parseInt(answer), 
+            hint: hint 
+        };
+    } else {
+        console.error('ระดับด่านไม่ถูกต้อง');
+    }
+}
+
+// ฟังก์ชันสำหรับแสดงคำใบ้ในด่าน
+function showHint(level) {
+    const hintContainer = document.getElementById(`hintContainer${level}`);
+    if (hintContainer && levelsData[level].hint) {
+        hintContainer.textContent = levelsData[level].hint;
+    } else {
+        console.error(`ไม่มีคำใบ้สำหรับด่านที่ ${level}`);
+    }
+}
+
+// ฟังก์ชันตรวจสอบคำตอบ
+// ฟังก์ชันตรวจสอบคำตอบ
+function checkMainAnswer(level) {
+    const answer = document.getElementById(`mainAnswer${level}`).value;
+    const mainPuzzle = document.getElementById(`mainPuzzle${level}`);
+    
+    // ตรวจสอบว่ามีการตั้งค่าคำตอบของด่านนี้แล้วหรือไม่
+    if (!levelsData[level].answer) {
+        console.error(`ยังไม่ได้ตั้งค่าคำตอบสำหรับด่านที่ ${level}`);
+        return;
+    }
+    
+    if (parseInt(answer) === levelsData[level].answer) {
+        // แสดงอนิเมชันเมื่อตอบถูก
+        mainPuzzle.innerHTML += '<div class="success-animation">🎉</div>';
+        
+        // เก็บข้อมูลคำตอบ (เปลี่ยนให้แสดงเฉพาะคำใบ้ หรือข้อความที่ต้องการ)
+        gameData.discoveredInfo.push({
+            type: 'main',
+            level: level,
+            content: `คุณผ่านด่านที่ ${level} แล้ว! คำใบ้: ${levelsData[level].hint}`,
+            timestamp: new Date().getTime()
+        });
+        updateDiscoveredInfo();
+        
+        // ทำเครื่องหมายว่าด่านนี้เสร็จแล้ว
+        document.querySelector(`.progress-step[data-level="${level}"]`).classList.add('completed');
+        
+        // เปิดด่านถัดไป (ถ้ามี)
+        if (level < 4) {
+            setTimeout(() => {
+                document.getElementById(`level${level}`).classList.remove('active');
+                document.getElementById(`level${level + 1}`).classList.add('active');
+                document.querySelector(`.progress-step[data-level="${level + 1}"]`).classList.add('active');
+            }, 1000);
+        } else {
+            // เปลี่ยนไปแสดงหน้า stats
+            setTimeout(() => {
+                document.getElementById(`level${level}`).classList.remove('active');
+                document.getElementById('statsLevel').classList.add('active');
+                document.querySelector(`.progress-step[data-level="stats"]`).classList.add('active');
+            }, 1000);
+        }
+    } else {
+        mainPuzzle.classList.add('error');
+        setTimeout(() => mainPuzzle.classList.remove('error'), 1000);
+    }
+}
+
+
+// ตัวอย่างการตั้งค่าคำตอบและคำใบ้
+setLevelData(1, 50152, 'ต่างประเทศมีผู้ชายทั้งหมด 57%');
+setLevelData(2, 152042, 'กรุงเทพมีผู้ชายทั้งหมด 75%');
+setLevelData(3, 6, 'วัดมีผู้ชายทั้งหมด 33%');
+setLevelData(4, 853, 'แผนภูมิแท่ง');
+
+
+// เพิ่ม event listener สำหรับปุ่มตรวจสอบข้อมูล
+document.getElementById('submitStats').addEventListener('click', checkStatsData);
+
+function updateMainPuzzleInfo(level) {
+    const mainPuzzleInfo = document.getElementById('mainPuzzleInfo');
+    let infoText = '';
+    
+    switch(level) {
+        case 1:
+            infoText = '🌟 ผู้ชายไปต่างประเทศ 8 คน และผู้หญิงไปต่างประเทศ 6 คน';
+            break;
+        case 2:
+            infoText = '🌟 ผู้ชายไปวัด 12 คน และผู้หญิงไปวัด 24 คน';
+            break;
+        case 3:
+            infoText = '🌟 ผู้ชายไปกรุงเทพ 15 คน และผู้หญิงไปกรุงเทพ 5 คน';
+            break;
+        case 4:
+            infoText = '🌟 คำใบ้: แผนภูมิแท่งเทียนจะช่วยไขปริศนา';
+            break;
+    }
+    
+    if (infoText) {
+        mainPuzzleInfo.innerHTML = infoText;
+        mainPuzzleInfo.style.display = 'block';
+    }
+}
+
+document.querySelectorAll('.progress-step.clickable').forEach(step => {
+    step.addEventListener('click', () => {
+        const level = step.getAttribute('data-level');
+        
+        // Hide all levels
+        document.querySelectorAll('.level').forEach(l => l.classList.remove('active'));
+        
+        if (level === 'stats') {
+            document.getElementById('statsLevel').classList.add('active');
+        } else {
+            document.getElementById(`level${level}`).classList.add('active');
+        }
+    });
+});
+
+
+// Initialize Game
+document.addEventListener('DOMContentLoaded', () => {
+    // Set first level as active
+    document.getElementById('level1').classList.add('active');
+});
+</script>
+</body>
+</html>
